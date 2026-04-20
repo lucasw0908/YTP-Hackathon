@@ -1,0 +1,69 @@
+name: FastAPI CI
+
+on:
+  push: 
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.11]
+
+    env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      SQLALCHEMY_DATABASE_URI: ${{ secrets.SQLALCHEMY_DATABASE_URI }}
+      REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
+      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+      DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      run: |
+        apt-get update && apt-get install -y --no-install-recommends \
+            build-essential \
+            python3-dev \
+            && rm -rf /var/lib/apt/lists/*
+
+        cd flask
+        uv sync --locked
+
+    - name: Create .env file
+      run: |
+        cat > .env <<EOF
+        SECRET_KEY=${SECRET_KEY}
+        SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
+        REDIRECT_URI=${REDIRECT_URI}
+        DISCORD_TOKEN=${DISCORD_TOKEN}
+        DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+        DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+        GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+        GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+        SMTP_USER=${SMTP_USER}
+        SMTP_PASSWORD=${SMTP_PASSWORD}
+        EOF
+
+    - name: Check .env file
+      run: cat .env | sed 's/\(.*\)=.*/\1=****/'
+
+    - name: Run Tests
+      run: |
+        cd flask
+        uv run ruff check .
+        uv run pytest

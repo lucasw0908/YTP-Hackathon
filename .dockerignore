@@ -1,0 +1,9 @@
+.git
+.github
+.dockerignore
+.gitignore
+.vscode
+*.yml
+Dockerfile*
+README.md
+tests
