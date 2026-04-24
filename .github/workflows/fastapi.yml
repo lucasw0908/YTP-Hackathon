@@ -49,25 +49,8 @@ jobs:
         cd backend
         uv sync --locked
 
-    - name: Create .env file
-      run: |
-        cat > .env <<EOF
-        SECRET_KEY=${SECRET_KEY}
-        SQLALCHEMY_URL=${SQLALCHEMY_URL}
-        REDIRECT_URI=${REDIRECT_URI}
-        DISCORD_TOKEN=${DISCORD_TOKEN}
-        DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-        DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-        GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-        GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-        SMTP_USERNAME=${SMTP_USERNAME}
-        SMTP_PASSWORD=${SMTP_PASSWORD}
-        EOF
-
-    - name: Check .env file
-      run: cat .env | sed 's/\(.*\)=.*/\1=****/'
-
     - name: Run Tests
       run: |
+        cd backend
         uv run ruff check .
         uv run pytest
