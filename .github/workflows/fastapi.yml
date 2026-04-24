@@ -43,7 +43,6 @@ jobs:
             python3-dev \
             && rm -rf /var/lib/apt/lists/*
 
-        cd flask
         uv sync --locked
 
     - name: Create .env file
@@ -66,6 +65,5 @@ jobs:
 
     - name: Run Tests
       run: |
-        cd flask
         uv run ruff check .
         uv run pytest
