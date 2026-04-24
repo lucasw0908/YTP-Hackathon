@@ -63,16 +63,39 @@ jobs:
             fi
           done
 
-      - name: Health check (HTTP endpoints)
+      - name: Health check for frontend
         run: |
-          until curl -f http://localhost/; do
-            echo "waiting frontend..."
+          for i in {1..30}; do
+            if curl -fs http://localhost/ >/dev/null; then
+              echo "frontend ready"
+              break
+            fi
+            echo "waiting frontend... attempt $i"
             sleep 2
           done
-          until curl -f http://localhost/api/; do
-            echo "waiting backend..."
+
+          if ! curl -fs http://localhost/ >/dev/null; then
+            echo "frontend failed"
+            docker compose logs frontend
+            exit 1
+          fi
+
+      - name: Health check for backend
+        run: |
+          for i in {1..30}; do
+            if curl -fs http://localhost/api/ >/dev/null; then
+              echo "backend ready"
+              break
+            fi
+            echo "waiting backend... attempt $i"
             sleep 2
           done
+
+          if ! curl -fs http://localhost/api/ >/dev/null; then
+            echo "backend failed"
+            docker compose logs backend
+            exit 1
+          fi
 
       - name: Show logs on failure
         if: failure()
