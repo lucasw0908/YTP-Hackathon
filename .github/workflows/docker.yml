@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
@@ -63,39 +64,48 @@ jobs:
             fi
           done
 
-      - name: Health check for frontend
+      - name: Show domain config
+        run: |
+          echo "DOMAIN_NAME = $DOMAIN_NAME"
+
+      - name: Wait for nginx
         run: |
           for i in {1..30}; do
             if curl -fs http://localhost/ >/dev/null; then
-              echo "frontend ready"
+              echo "nginx ready"
               break
             fi
-            echo "waiting frontend... attempt $i"
+            echo "waiting nginx... $i"
             sleep 2
           done
 
-          if ! curl -fs http://localhost/ >/dev/null; then
-            echo "frontend failed"
-            docker compose logs frontend
-            exit 1
-          fi
+          curl -f http://localhost/ || (docker compose logs nginx && exit 1)
 
-      - name: Health check for backend
+      - name: Wait for backend (8080)
         run: |
           for i in {1..30}; do
-            if curl -fs http://localhost/api/ >/dev/null; then
+            if curl -fs http://localhost:8080/docs >/dev/null || curl -fs http://localhost/api/health >/dev/null; then
               echo "backend ready"
               break
             fi
-            echo "waiting backend... attempt $i"
+            echo "waiting backend... $i"
             sleep 2
           done
 
-          if ! curl -fs http://localhost/api/ >/dev/null; then
-            echo "backend failed"
-            docker compose logs backend
-            exit 1
-          fi
+          curl -f http://localhost/api/health || (docker compose logs backend && exit 1)
+
+      - name: Wait for frontend (5173)
+        run: |
+          for i in {1..30}; do
+            if curl -fs http://localhost:5173 >/dev/null; then
+              echo "frontend ready"
+              break
+            fi
+            echo "waiting frontend... $i"
+            sleep 2
+          done
+
+          curl -f http://localhost:5173 || (docker compose logs frontend && exit 1)
 
       - name: Show logs on failure
         if: failure()
