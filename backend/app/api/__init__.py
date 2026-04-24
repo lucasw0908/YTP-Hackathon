@@ -18,7 +18,6 @@ def get_api_router() -> APIRouter:
         The API router.
     """
     api_router = APIRouter(
-        prefix="/api",
         tags=["API"],
         dependencies=[Depends(resp_headers)]
     )

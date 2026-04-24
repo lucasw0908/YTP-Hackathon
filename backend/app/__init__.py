@@ -16,12 +16,12 @@ settings = get_settings()
 
 
 def init_logger() -> None:
-    formatter = logging.Formatter(settings.logging.format, datefmt=settings.defaults.datetime_format, style="{")
+    formatter = logging.Formatter(settings.logging.FORMAT, datefmt=settings.defaults.DATETIME_FORMAT, style="{")
     
-    log.setLevel(settings.logging.level)
+    log.setLevel(settings.logging.LEVEL)
         
-    if os.access(settings.basedir, os.W_OK):
-        LOGDIR = os.path.join(settings.basedir, "logs")
+    if os.access(settings.BASEDIR, os.W_OK):
+        LOGDIR = os.path.join(settings.BASEDIR, "logs")
         
         if not os.path.exists(LOGDIR):
             os.makedirs(LOGDIR)
@@ -29,10 +29,10 @@ def init_logger() -> None:
         log.debug(f"Log directory: {LOGDIR}")
             
         file_handler = logging.handlers.RotatingFileHandler(
-            filename=os.path.join(LOGDIR, settings.logging.filename),
+            filename=os.path.join(LOGDIR, settings.logging.FILENAME),
             encoding="utf-8",
-            maxBytes=settings.logging.max_bytes, 
-            backupCount=settings.logging.backup_count
+            maxBytes=settings.logging.MAX_BYTES, 
+            backupCount=settings.logging.BACKUP_COUNT
         )
         
         file_handler.setLevel(logging.DEBUG)
@@ -65,13 +65,13 @@ def create_app() -> FastAPI:
             await sessionmanager.close()
             
     app = FastAPI(
-        title=settings.project.name, 
-        version=settings.project.version,
+        title=settings.project.NAME, 
+        version=settings.project.VERSION,
         lifespan=lifespan
     )
     
     # Initialize the CSRF protection
-    if settings.security.csrf_protection:
+    if settings.security.CSRF_PROTECTION:
         origins = [
             "http://localhost:8080"
         ]

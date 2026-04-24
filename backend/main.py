@@ -9,5 +9,4 @@ app = create_app()
     
 
 if __name__ == "__main__":
-    print(settings.database.url)
-    uvicorn.run(app, host=settings.server.host, port=settings.server.port)
+    uvicorn.run(app, host=settings.server.HOST, port=settings.server.PORT)

@@ -29,10 +29,10 @@ class DatabaseSessionManager:
     """
     def __init__(self):
         self._engine = create_async_engine(
-            url=settings.database.sqlite_url if settings.server.debug else settings.database.sqlalchemy_url,
-            echo=settings.database.echo,
-            pool_size=settings.database.pool_size,
-            pool_recycle=settings.database.pool_recycle,
+            url=settings.database.SQLITE_URL if settings.server.DEBUG else settings.database.URL,
+            echo=settings.database.ECHO,
+            pool_size=settings.database.POOL_SIZE,
+            pool_recycle=settings.database.POOL_RECYCLE,
             pool_pre_ping=True
         )
         self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine)

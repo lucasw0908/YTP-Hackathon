@@ -14,6 +14,7 @@ ENV UV_NO_DEV=1
 
 WORKDIR /app
 RUN uv sync --locked
+RUN uv pip install --no-cache-dir gunicorn
 
 # Start the app
-CMD ["uv", "run", "fastapi", "run", "main.py", "--workers", "4"]
+CMD ["uv", "run", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8080", "main:app"]
