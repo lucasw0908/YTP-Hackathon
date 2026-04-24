@@ -65,8 +65,14 @@ jobs:
 
       - name: Health check (HTTP endpoints)
         run: |
-          curl -f http://localhost:5173 || exit 1   # frontend
-          curl -f http://localhost:8080 || exit 1   # backend
+          until curl -f http://localhost/; do
+            echo "waiting frontend..."
+            sleep 2
+          done
+          until curl -f http://localhost/api/; do
+            echo "waiting backend..."
+            sleep 2
+          done
 
       - name: Show logs on failure
         if: failure()

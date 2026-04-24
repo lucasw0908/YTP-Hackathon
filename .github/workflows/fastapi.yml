@@ -40,17 +40,11 @@ jobs:
       uses: astral-sh/setup-uv@v7
 
     - name: Install Dependencies
-      run: |
-        apt-get update && apt-get install -y --no-install-recommends \
-            build-essential \
-            python3-dev \
-            && rm -rf /var/lib/apt/lists/*
-
-        cd backend
-        uv sync --locked
+      working-directory: backend
+      run: uv sync --locked
 
     - name: Run Tests
+      working-directory: backend
       run: |
-        cd backend
         uv run ruff check .
         uv run pytest
