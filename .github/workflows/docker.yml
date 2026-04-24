@@ -36,7 +36,7 @@ jobs:
         run: docker compose build
 
       - name: Start services
-        run: docker compose --env-file .env up -d
+        run: docker compose up -d
 
       - name: Wait for services to be ready
         run: |
