@@ -30,17 +30,14 @@ jobs:
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version-file: "pyproject.toml"
 
     - name: Install uv
-      run: curl -Ls https://astral.sh/uv/install.sh | sh
-
-    - name: Add uv to PATH
-      run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      uses: astral-sh/setup-uv@v7
 
     - name: Install Dependencies
       run: |
