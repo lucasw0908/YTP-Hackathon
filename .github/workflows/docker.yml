@@ -51,9 +51,6 @@ jobs:
           SMTP_PASSWORD=${SMTP_PASSWORD}
           EOF
 
-      - name: Check .env file
-        run: cat .env | sed 's/\(.*\)=.*/\1=****/'
-
       - name: Build Docker images
         run: docker compose build
 
@@ -85,9 +82,18 @@ jobs:
             fi
           done
 
-      - name: Show domain config
+      - name: Wait for frontend (5173)
         run: |
-          echo "DOMAIN_NAME = $DOMAIN_NAME"
+          for i in {1..30}; do
+            if curl -fs http://localhost:5173 >/dev/null; then
+              echo "frontend ready"
+              break
+            fi
+            echo "waiting frontend... $i"
+            sleep 2
+          done
+
+          curl -f http://localhost:5173 || (docker compose logs frontend && exit 1)
 
       - name: Wait for nginx
         run: |
@@ -114,19 +120,6 @@ jobs:
           done
 
           curl -f http://localhost/api/health || (docker compose logs backend && exit 1)
-
-      - name: Wait for frontend (5173)
-        run: |
-          for i in {1..30}; do
-            if curl -fs http://localhost:5173 >/dev/null; then
-              echo "frontend ready"
-              break
-            fi
-            echo "waiting frontend... $i"
-            sleep 2
-          done
-
-          curl -f http://localhost:5173 || (docker compose logs frontend && exit 1)
 
       - name: Show logs on failure
         if: failure()
