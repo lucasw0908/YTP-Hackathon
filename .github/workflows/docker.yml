@@ -82,44 +82,12 @@ jobs:
             fi
           done
 
-      - name: Wait for frontend (5173)
+      - name: Health check
         run: |
-          for i in {1..30}; do
-            if curl -i http://localhost:5173/ >/dev/null; then
-              echo "frontend ready"
-              break
-            fi
-            echo "waiting frontend... $i"
-            sleep 2
-          done
-
-          curl -f http://localhost:5173/ || (docker compose logs frontend && exit 1)
-
-      - name: Wait for nginx
-        run: |
-          for i in {1..30}; do
-            if curl -i http://localhost/ >/dev/null; then
-              echo "nginx ready"
-              break
-            fi
-            echo "waiting nginx... $i"
-            sleep 2
-          done
-
-          curl -f http://localhost/ || (docker compose logs nginx && exit 1)
-
-      - name: Wait for backend (8080)
-        run: |
-          for i in {1..30}; do
-            if curl -i http://localhost:8080/docs >/dev/null || curl -i http://localhost/api/health >/dev/null; then
-              echo "backend ready"
-              break
-            fi
-            echo "waiting backend... $i"
-            sleep 2
-          done
-
-          curl -f http://localhost/api/health || (docker compose logs backend && exit 1)
+          curl -i localhost:5173/
+          curl -i localhost:8080/
+          curl -i localhost/
+          curl -i localhost/api/
 
       - name: Show logs on failure
         if: failure()
