@@ -33,6 +33,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Create .env file
+        run: |
+          cat > .env <<EOF
+          DOMAIN_NAME=${DOMAIN_NAME}
+          SECRET_KEY=${SECRET_KEY}
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          REDIRECT_URI=${REDIRECT_URI}
+          DISCORD_TOKEN=${DISCORD_TOKEN}
+          DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+          DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+          GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+          GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+          SMTP_USERNAME=${SMTP_USERNAME}
+          SMTP_PASSWORD=${SMTP_PASSWORD}
+          EOF
+
+      - name: Check .env file
+        run: cat .env | sed 's/\(.*\)=.*/\1=****/'
+
       - name: Build Docker images
         run: docker compose build
 
