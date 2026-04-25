@@ -78,4 +78,4 @@ async def get_db_session():
     async with sessionmanager.session() as session:
         yield session
         
-DatabaseDep = Annotated[AsyncSession, Depends(get_db_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
