@@ -1,49 +1,577 @@
-// src/api/mockNavigation.ts
+import type { Route } from '../types/wayPoint';
 
-export interface RoutePoint {
-    lat: number;
-    lng: number;
+export async function fetchRoute(
+    _userLat: number, _userLng: number,
+    _destLat: number, _destLng: number,
+): Promise<Route> {
+    // TODO: GET /api/navigation?start_lat=&start_lng=&end_lat=&end_lng=
+    await new Promise(r => setTimeout(r, 600));
+    return MOCK_ROUTE;
 }
 
-export interface NavigationTask {
-    taskId: string;
-    destinationName: string;
-    routeCoords: RoutePoint[];
-}
-
-// 模擬的路線資料庫 (可以依照站點 ID 給不同路線，若找不到就給預設)
-const MOCK_ROUTES: Record<string, RoutePoint[]> = {
-    // 台北車站附近的模擬路線
-    'default': [
-        { lat: 25.0478, lng: 121.5170 }, 
-        { lat: 25.0485, lng: 121.5180 },
-        { lat: 25.0490, lng: 121.5195 }  
-    ],
-    // 頂埔站 (BL01) 附近的模擬路線
-    'BL01': [
-        { lat: 24.9595, lng: 121.4200 },
-        { lat: 24.9598, lng: 121.4190 },
-        { lat: 24.9600, lng: 121.4185 }
+export const MOCK_ROUTE: Route =
+{
+    "id": "route_generated_01",
+    "totalDistanceMeters": 1658,
+    "estimatedDurationSeconds": 3499,
+    "waypoints": [
+        {
+            "coord": [121.57378, 25.076928],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573907, 25.076874],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573979, 25.077007],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573525, 25.077229],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573346, 25.077316],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.57322, 25.077558],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573136, 25.077719],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573159, 25.077775],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573194, 25.077856],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.57335, 25.078212],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573437, 25.078416],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573278, 25.078472],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573513, 25.079037],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573539, 25.079099],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.573566, 25.079163],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.574061, 25.080329],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.574098, 25.080418],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.575134, 25.080016],
+            "mode": "metro",
+            "role": "transition",
+            "positioning": "beacon",
+            "instruction": "進入 港墘 站搭乘捷運",
+            "station": "港墘",
+            "stationCode": "BR17"
+        },
+        {
+            "coord": [121.57516, 25.08007],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "港墘",
+            "stationCode": "BR17",
+            "line": "BR"
+        },
+        {
+            "coord": [121.567227, 25.08216],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "西湖",
+            "stationCode": "BR16",
+            "line": "BR"
+        },
+        {
+            "coord": [121.555582, 25.08483],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "劍南路",
+            "stationCode": "BR15",
+            "line": "BR"
+        },
+        {
+            "coord": [121.54679, 25.07943],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "大直",
+            "stationCode": "BR14",
+            "line": "BR"
+        },
+        {
+            "coord": [121.55162, 25.063111],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "松山機場",
+            "stationCode": "BR13",
+            "line": "BR"
+        },
+        {
+            "coord": [121.544215, 25.06085],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "中山國中",
+            "stationCode": "BR12",
+            "line": "BR"
+        },
+        {
+            "coord": [121.544303, 25.052044],
+            "mode": "metro",
+            "role": "transfer",
+            "positioning": "beacon",
+            "station": "南京復興",
+            "stationCode": "BR11",
+            "fromLine": "BR",
+            "toLine": "G",
+            "instruction": "於 南京復興 轉乘 G 線"
+        },
+        {
+            "coord": [121.544303, 25.052044],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "南京復興",
+            "stationCode": "G16",
+            "line": "G"
+        },
+        {
+            "coord": [121.53285, 25.052693],
+            "mode": "metro",
+            "role": "transfer",
+            "positioning": "beacon",
+            "station": "松江南京",
+            "stationCode": "G15",
+            "fromLine": "G",
+            "toLine": "O",
+            "instruction": "於 松江南京 轉乘 O 線"
+        },
+        {
+            "coord": [121.53285, 25.052693],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "松江南京",
+            "stationCode": "O08",
+            "line": "O"
+        },
+        {
+            "coord": [121.532856, 25.041797],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "忠孝新生",
+            "stationCode": "O07",
+            "line": "O"
+        },
+        {
+            "coord": [121.528766, 25.033894],
+            "mode": "metro",
+            "role": "waypoint",
+            "positioning": "beacon",
+            "station": "東門",
+            "stationCode": "O06",
+            "line": "O"
+        },
+        {
+            "coord": [121.522868, 25.026373],
+            "mode": "metro",
+            "role": "transfer",
+            "positioning": "beacon",
+            "station": "古亭",
+            "stationCode": "O05",
+            "fromLine": "O",
+            "toLine": "G",
+            "instruction": "於 古亭 轉乘 G 線"
+        },
+        {
+            "coord": [121.522868, 25.026373],
+            "mode": "walk",
+            "role": "transition",
+            "positioning": "gps",
+            "station": "古亭",
+            "stationCode": "G09",
+            // "line": "G",
+            "instruction": "離開 古亭 站"
+        },
+        {
+            "coord": [121.522715, 25.026577],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.522625, 25.026523],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.522324, 25.026913],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.522316, 25.026926],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.522305, 25.026943],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.522242, 25.02693],
+            "mode": "bike",
+            "role": "transition",
+            "positioning": "gps",
+            "instruction": "請在此租借 YouBike 並開始騎乘"
+        },
+        {
+            "coord": [121.522205, 25.026923],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.522191, 25.02692],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.521518, 25.026781],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.521302, 25.026738],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.521201, 25.02672],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.521139, 25.026777],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.521041, 25.026857],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520986, 25.026749],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520961, 25.026685],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.521127, 25.026249],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520821, 25.026084],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520789, 25.026066],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520666, 25.025993],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520454, 25.025606],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520416, 25.025631],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520299, 25.025721],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.520131, 25.025905],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.519871, 25.026068],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.519782, 25.026072],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.519626, 25.026023],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.519441, 25.026],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.518971, 25.025996],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.518781, 25.026027],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.518736, 25.026054],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.518617, 25.026124],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.518322, 25.026232],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.518117, 25.026304],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517862, 25.026402],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517836, 25.026353],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517708, 25.026056],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517644, 25.025914],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517576, 25.025781],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517454, 25.025499],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517449, 25.025398],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517379, 25.025434],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.517265, 25.025464],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516981, 25.02553],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516597, 25.025628],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516431, 25.025669],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516316, 25.025693],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.51634, 25.025586],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516432, 25.025262],
+            "mode": "bike",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516479, 25.025076],
+            "mode": "walk",
+            "role": "transition",
+            "positioning": "gps",
+            "instruction": "請在此歸還 YouBike 並改為步行"
+        },
+        {
+            "coord": [121.516432, 25.025262],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516366, 25.025244],
+            "mode": "walk",
+            "role": "waypoint",
+            "positioning": "gps"
+        },
+        {
+            "coord": [121.516418, 25.025042],
+            "mode": "walk",
+            "role": "destination",
+            "positioning": "gps"
+        }
     ]
-};
-
-/**
- * 模擬：向後端請求前往指定捷運站的任務與導航路徑
- * @param stationId 捷運站代碼 (例如 "BL01")
- * @param stationName 捷運站名稱
- */
-export const fetchTaskRouteForStation = async (stationId: string, stationName: string): Promise<NavigationTask> => {
-    console.log(`[API] 正在呼叫 LLM 規劃前往 [${stationName}] 的專屬任務與路線...`);
-    
-    // 模擬網路傳輸與 LLM 生成的運算延遲 (稍微久一點，感覺像在思考)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // 取得路線，若沒有專屬路線則拿預設的
-    const coords = MOCK_ROUTES[stationId] || MOCK_ROUTES['default'];
-
-    return {
-        taskId: `TASK_${Date.now()}`,
-        destinationName: `${stationName} - 隱藏打卡點`,
-        routeCoords: coords
-    };
-};
+}
