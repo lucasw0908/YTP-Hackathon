@@ -38,7 +38,7 @@ class DiscordOAuthManager(OAuthManager):
             client_secret=settings.oauth.DISCORD_CLIENT_SECRET, 
             validate_token=False
         )
-        self.redirect_uri = settings.oauth.REDIRECT_URI
+        self.redirect_uri = settings.oauth.REDIRECT_URI + "oauth/discord/callback"
     
     async def auth(self, request: Request, session: SessionDep) -> Optional[Users]:
         log.debug(request.items())
@@ -79,7 +79,7 @@ class GoogleOAuthManager(OAuthManager):
         self.google_flow = Flow.from_client_config(
             settings.oauth.GOOGLE_CONFIG,
             scopes=settings.oauth.GOOGLE_SCOPES,
-            redirect_uri=settings.oauth.REDIRECT_URI
+            redirect_uri=settings.oauth.REDIRECT_URI + "oauth/google/callback"
         )
         self.redirect_uri = settings.oauth.REDIRECT_URI
         
