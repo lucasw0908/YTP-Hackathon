@@ -93,7 +93,8 @@ class OAuthSettings(BaseModel):
     @computed_field
     @property
     def DISCORD_OAUTH_URL(self) -> str:
-        return f"https://discord.com/oauth2/authorize?client_id={self.DISCORD_CLIENT_ID}&redirect_uri={self.REDIRECT_URI}&response_type=code&scope=identify+email"
+        redirect_uri = f"{self.REDIRECT_URI.rstrip('/')}/oauth/discord/callback"
+        return f"https://discord.com/oauth2/authorize?client_id={self.DISCORD_CLIENT_ID}&redirect_uri={redirect_uri}&response_type=code&scope=identify+email"
     
     # Google OAuth configuration
     GOOGLE_CLIENT_ID: str = EnvManager.get("GOOGLE_CLIENT_ID")
@@ -107,9 +108,9 @@ class OAuthSettings(BaseModel):
             "web": {
                 "client_id": self.GOOGLE_CLIENT_ID,
                 "client_secret": self.GOOGLE_CLIENT_SECRET,
-                "redirect_uris": [self.REDIRECT_URI],
+                "redirect_uris": [f"{self.REDIRECT_URI.rstrip('/')}/oauth/google/callback"],
                 "scopes": self.GOOGLE_SCOPES,
-                "project_id": "Vocabulary Website Project",
+                "project_id": "YTP-Hackathon",
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",

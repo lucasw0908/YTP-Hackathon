@@ -54,11 +54,11 @@ class DiscordOAuthManager(OAuthManager):
         current_user = bearer_client.users.get_current_user()
         
         try:
-            user = await get_user(session, discord_id=current_user.id)
+            user = await get_user(session, discord_id=str(current_user.id))
             
         except HTTPException:
             user = Users(
-                discord_id = current_user.id,
+                discord_id = str(current_user.id),
                 username = current_user.username,
                 email = current_user.email,
                 avatar_url = current_user.avatar_url,
@@ -74,7 +74,7 @@ class GoogleOAuthManager(OAuthManager):
         self.google_flow = Flow.from_client_config(
             settings.oauth.GOOGLE_CONFIG,
             scopes=settings.oauth.GOOGLE_SCOPES,
-            redirect_uri=settings.oauth.REDIRECT_URI + "oauth/google/callback"
+            redirect_uri=settings.oauth.REDIRECT_URI.rstrip('/') + "/oauth/google/callback"
         )
         self.redirect_uri = settings.oauth.REDIRECT_URI
         
@@ -83,27 +83,40 @@ class GoogleOAuthManager(OAuthManager):
             log.warning("Insecure transport for OAuth2, only for development use.")
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         
-        try:
-            self.google_flow.fetch_token(authorization_response=request.url)
-            credentials = self.google_flow.credentials
-            
-        except OAuth2Error as e:
-            log.warning(f"Failed to fetch token: {e}")
+        code = request.query_params.get("code")
+        if not code:
+            log.warning("No code provided in Google callback")
             return None
+
+        import requests as req
+        token_data = {
+            "code": code,
+            "client_id": self.google_client_id,
+            "client_secret": self.google_flow.client_config["client_secret"],
+            "redirect_uri": self.google_flow.redirect_uri,
+            "grant_type": "authorization_code",
+        }
         
         try:
+            response = req.post("https://oauth2.googleapis.com/token", data=token_data)
+            response.raise_for_status()
+            tokens = response.json()
+            id_token_jwt = tokens.get("id_token")
+            
+            if not id_token_jwt:
+                log.warning("No ID token returned from Google")
+                return None
+                
             idinfo = id_token.verify_oauth2_token(
-                credentials._id_token,
+                id_token_jwt,
                 requests.Request(),
                 self.google_client_id
             )
-            
-        except (GoogleAuthError, ValueError) as e:
-            log.warning(f"Failed to verify ID token: {e}")
-            return None
-        
-        if idinfo is None:
-            log.warning("ID info is None")
+        except Exception as e:
+            if 'response' in locals() and hasattr(response, 'text'):
+                log.warning(f"Failed to exchange Google code: {e}. Response: {response.text}")
+            else:
+                log.warning(f"Failed to exchange Google code: {e}")
             return None
         
         if idinfo["iss"] not in ["accounts.google.com", "https://accounts.google.com"]:
