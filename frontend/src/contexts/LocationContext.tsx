@@ -10,20 +10,32 @@ interface LocationState {
 
 const LocationContext = createContext<LocationState | undefined>(undefined);
 
+const GPS_STORAGE_KEY = 'lastKnownGps';
+
+function readStoredGps(): { lat: number; lng: number } | null {
+    try {
+        const raw = sessionStorage.getItem(GPS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
 export function LocationProvider({ children }: { children: ReactNode }) {
     const [beacons, setBeacons] = useState<WebBeacon[]>([]);
-    // const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
-    // 測試座標
-    const [gps, setGps] = useState<{ lat: number; lng: number } | null>({"lat": 25.0767501, "lng": 121.5734897});
+    // 初始值從 sessionStorage 還原，避免 WebView reload 後瞬間變 null
+    const [gps, setGps] = useState<{ lat: number; lng: number } | null>(readStoredGps);
 
     // 接收來自 App 的所有訊息
     const handleAppMessage = useCallback((type: string, payload: any) => {
-        console.log(type,payload)
         if (type === 'BEACON_UPDATE') {
             setBeacons(payload);
         }
         if (type === 'GPS_UPDATE') {
-            setGps(payload);
+            setGps({...payload});
+            console.log("?????")
+            // 同步寫入 sessionStorage，重載後可立即還原
+            try { sessionStorage.setItem(GPS_STORAGE_KEY, JSON.stringify(payload)); } catch {}
         }
     }, []);
 

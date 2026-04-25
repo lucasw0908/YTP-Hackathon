@@ -58,12 +58,19 @@ export function useNavigation(route: Route | null): NavStatus {
         }
     }, []);
 
+    useEffect(() => {
+        alert("!!")
+    }, [gps])
+
     // GPS 距離檢測
     useEffect(() => {
+        console.log(gps, targetWaypoint)
         if (!gps || !targetWaypoint || isComplete) return;
         if (targetWaypoint.positioning !== 'gps') return;
+
         const [lng, lat] = targetWaypoint.coord;
         const dist = haversineDistance(gps.lat, gps.lng, lat, lng);
+        console.log("999", targetWaypoint.coord, dist, GPS_ARRIVAL_RADIUS_M)
         if (dist < GPS_ARRIVAL_RADIUS_M) {
             doAdvance(currentIndex, waypoints);
         }
