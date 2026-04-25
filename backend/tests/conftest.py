@@ -10,9 +10,3 @@ app = create_app()
 def test_client():
     with TestClient(app) as c:
         yield c
-        
-@pytest.mark.webtest
-def test_root(test_client: TestClient):
-    response = test_client.get("/api/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Hello, World!"}

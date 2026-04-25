@@ -30,46 +30,21 @@ jobs:
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      run: curl -Ls https://astral.sh/uv/install.sh | sh
-
-    - name: Add uv to PATH
-      run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      uses: astral-sh/setup-uv@v7
 
     - name: Install Dependencies
-      run: |
-        apt-get update && apt-get install -y --no-install-recommends \
-            build-essential \
-            python3-dev \
-            && rm -rf /var/lib/apt/lists/*
-
-        uv sync --locked
-
-    - name: Create .env file
-      run: |
-        cat > .env <<EOF
-        SECRET_KEY=${SECRET_KEY}
-        SQLALCHEMY_URL=${SQLALCHEMY_URL}
-        REDIRECT_URI=${REDIRECT_URI}
-        DISCORD_TOKEN=${DISCORD_TOKEN}
-        DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-        DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-        GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-        GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-        SMTP_USERNAME=${SMTP_USERNAME}
-        SMTP_PASSWORD=${SMTP_PASSWORD}
-        EOF
-
-    - name: Check .env file
-      run: cat .env | sed 's/\(.*\)=.*/\1=****/'
+      working-directory: backend
+      run: uv sync --locked
 
     - name: Run Tests
+      working-directory: backend
       run: |
         uv run ruff check .
         uv run pytest

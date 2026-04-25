@@ -23,8 +23,7 @@ def init_logger() -> None:
     if os.access(settings.BASEDIR, os.W_OK):
         LOGDIR = os.path.join(settings.BASEDIR, "logs")
         
-        if not os.path.exists(LOGDIR):
-            os.makedirs(LOGDIR)
+        os.makedirs(LOGDIR, exist_ok=True)
             
         log.debug(f"Log directory: {LOGDIR}")
             
