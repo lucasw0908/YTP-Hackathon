@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, computed_field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, JsonConfigSettingsSource
 from fastapi import Depends
 
 
@@ -151,11 +151,22 @@ class Settings(BaseSettings):
     defaults: DefaultSettings = DefaultSettings()
     social_links: SocialLinks = SocialLinks()
     
-    # TODO: fix this.
     model_config = SettingsConfigDict(
         json_file=os.path.join(BASEDIR, "local_settings.json"),
         json_file_encoding="utf-8",
     )
+    
+    @classmethod
+    def settings_customise_sources(
+        cls, settings_cls, init_settings, env_settings, dotenv_settings, file_secret_settings
+    ):
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            JsonConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
 
 @lru_cache()
