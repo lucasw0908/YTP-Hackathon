@@ -1,17 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Map, Train } from 'lucide-react';
 import NavigationMap from './NavigationMap';
 import MrtMap from './MrtMap';
-import { useNavigation } from '../hooks/useNavigation';
+import { useNavigation, type NavPrompt } from '../hooks/useNavigation';
 import { useLocation as useLocationCtx } from '../contexts/LocationContext';
 import type { Route, TransportMode, Waypoint } from '../types/wayPoint';
-
-// 定義要傳遞給 MrtMap 的站點與轉乘資訊
-export interface MrtStationData {
-    code: string;
-    transferToLine?: string;
-    transferLineName?: string;
-}
 
 const LINE_NAMES: Record<string, string> = {
     BL: '板南線', BR: '文湖線', G: '松山新店線',
@@ -20,6 +13,13 @@ const LINE_NAMES: Record<string, string> = {
 
 const MODE_EMOJI: Record<TransportMode, string> = {
     walk: '🚶', bike: '🚲', metro: '🚇',
+};
+
+const PROMPT_UI: Record<NavPrompt['promptType'], { emoji: string; title: string }> = {
+    mrt_entry:  { emoji: '🚇', title: '準備進入捷運站' },
+    mrt_exit:   { emoji: '🚉', title: '準備離開捷運站' },
+    transfer:   { emoji: '🔄', title: '抵達轉乘站' },
+    transition: { emoji: '🔀', title: '需要切換交通方式' },
 };
 
 function activityDesc(mode: TransportMode, wp?: Waypoint | null): string {
@@ -38,28 +38,23 @@ function computeNextAction(route: Route, currentIndex: number, mode: TransportMo
     const currentWp = waypoints[currentIndex] ?? null;
     const base = activityDesc(mode, currentWp);
 
-    if (
-        currentWp &&
-        (currentWp.role === 'transition' || currentWp.role === 'transfer' || currentWp.role === 'destination')
-    ) {
+    if (currentWp && (currentWp.role === 'transition' || currentWp.role === 'transfer' || currentWp.role === 'destination')) {
         return (currentWp as any).instruction ?? base;
     }
 
     for (let i = currentIndex + 1; i < waypoints.length; i++) {
         const wp = waypoints[i];
         if (wp.role === 'waypoint') continue;
-
         if (wp.role === 'transition') {
             const station = (wp as any).station as string | undefined;
             if (wp.mode === 'metro') return `${base}，前往${station ?? ''}站入站`;
-            if (wp.mode === 'walk') return `${base}，即將出站步行`;
+            if ((wp as any).stationCode) return `${base}，即將出站步行`;
             return `${base}，即將切換交通方式`;
         }
         if (wp.role === 'transfer') {
             const station = (wp as any).station as string | undefined;
             const toLine = (wp as any).toLine as string | undefined;
-            const lineName = toLine ? (LINE_NAMES[toLine] ?? toLine) : '';
-            return `${base}，在${station ?? ''}換${lineName}`;
+            return `${base}，在${station ?? ''}換${toLine ? (LINE_NAMES[toLine] ?? toLine) : '線'}`;
         }
         if (wp.role === 'destination') {
             const station = (wp as any).station as string | undefined;
@@ -77,37 +72,41 @@ export default function NavController({ route }: NavControllerProps) {
     const nav = useNavigation(route);
     const { currentStationCode, gps } = useLocationCtx();
 
-    const [manualMrt, setManualMrt] = useState<boolean | null>(null);
-    useEffect(() => setManualMrt(null), [nav.activePositioning]);
-    const showMrt = manualMrt !== null ? manualMrt : nav.activePositioning === 'beacon';
+    // 地圖狀態：由使用者「確認」動作驅動，不再自動切換
+    // 初始值根據儲存進度：若目前 waypoint 是 beacon 模式，則直接開 MRT 圖
+    const [showMrt, setShowMrt] = useState(() => nav.activePositioning === 'beacon');
 
-    // 擷取捷運路線站碼與轉乘資訊
-    const metroRouteStations = useMemo<MrtStationData[]>(() => {
+    // 4 秒後自動消失的橫幅指示
+    useEffect(() => {
+        if (!nav.pendingInstruction) return;
+        const t = setTimeout(nav.clearInstruction, 4000);
+        return () => clearTimeout(t);
+    }, [nav.pendingInstruction]);
+
+    // 使用者點擊「確認繼續」：依節點類型決定是否切換地圖
+    function handleConfirm() {
+        const type = nav.pendingPrompt?.promptType;
+        if (type === 'mrt_entry') setShowMrt(true);
+        else if (type === 'mrt_exit') setShowMrt(false);
+        // transfer / transition 不切換地圖
+        nav.confirmAdvance();
+    }
+
+    // 捷運路線站碼（去重，保持順序）
+    const metroRouteStationCodes = useMemo<string[]>(() => {
         const seen = new Set<string>();
-        const result: MrtStationData[] = [];
+        const result: string[] = [];
         for (const wp of route.waypoints) {
             if (wp.mode === 'metro') {
                 const code = (wp as any).stationCode as string | undefined;
-                if (code && !seen.has(code)) {
-                    seen.add(code);
-                    const stationData: MrtStationData = { code };
-                    // 提取轉乘資訊
-                    if (wp.role === 'transfer') {
-                        const toLine = (wp as any).toLine as string | undefined;
-                        if (toLine) {
-                            stationData.transferToLine = toLine;
-                            stationData.transferLineName = LINE_NAMES[toLine] ?? toLine;
-                        }
-                    }
-                    result.push(stationData);
-                }
+                if (code && !seen.has(code)) { seen.add(code); result.push(code); }
             }
         }
         return result;
     }, [route]);
 
     const activeMetroIndex = currentStationCode
-        ? metroRouteStations.findIndex(s => s.code === currentStationCode)
+        ? metroRouteStationCodes.indexOf(currentStationCode)
         : -1;
 
     const nextActionText = useMemo(
@@ -115,48 +114,57 @@ export default function NavController({ route }: NavControllerProps) {
         [route, nav.currentIndex, nav.activeMode, nav.isComplete],
     );
 
+    const promptUI = nav.pendingPrompt ? PROMPT_UI[nav.pendingPrompt.promptType] : null;
+
     return (
         <div className="relative h-full w-full overflow-hidden">
-            {/* 實體地圖層 */}
+            {/* Leaflet 地圖層 */}
             <div className={`absolute inset-0 transition-opacity duration-300 ${showMrt ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <NavigationMap route={route} />
+                <NavigationMap route={route} currentIndex={nav.currentIndex} />
             </div>
 
             {/* 捷運圖層 */}
             <div className={`absolute inset-0 transition-opacity duration-300 ${showMrt ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <MrtMap
                     hideHeader
-                    stationsData={metroRouteStations}
+                    routeStationCodes={metroRouteStationCodes}
                     activeRouteIndex={activeMetroIndex}
                 />
             </div>
 
-            {/* 地圖切換按鈕（右上角） */}
-            <div className="absolute top-4 right-4 z-[1000] flex bg-white rounded-full shadow-lg p-1 gap-1">
+            {/* 地圖切換按鈕（手動覆蓋） */}
+            <div className="absolute top-4 right-4 z-1000 flex bg-white rounded-full shadow-lg p-1 gap-1">
                 <button
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${!showMrt ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                    onClick={() => setManualMrt(showMrt ? null : false)}
+                    onClick={() => setShowMrt(false)}
                 >
                     <Map size={13} /> 地圖
                 </button>
                 <button
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${showMrt ? 'bg-purple-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                    onClick={() => setManualMrt(showMrt ? null : true)}
+                    onClick={() => setShowMrt(true)}
                 >
                     <Train size={13} /> 捷運
                 </button>
             </div>
 
-            {/* 阻擋式確認視窗（Modal） */}
+            {/* 一般節點指示橫幅（4 秒自動消失） */}
+            {nav.pendingInstruction && !nav.isComplete && !nav.pendingPrompt && (
+                <div className="absolute top-16 left-4 right-4 z-1000 bg-amber-50 border border-amber-300 px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-amber-800 animate-pulse">
+                    {nav.pendingInstruction}
+                </div>
+            )}
+
+            {/* 重大節點確認 Modal */}
             {nav.pendingPrompt && !nav.isComplete && (
                 <div className="absolute inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm transform transition-all scale-100 opacity-100">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
                         <div className="flex items-center gap-3 mb-4">
-                            <span className="text-4xl bg-blue-50 w-12 h-12 flex items-center justify-center rounded-full">
-                                {nav.pendingPrompt.isMrtEntry ? '🚇' : '📍'}
+                            <span className="text-4xl bg-blue-50 w-12 h-12 flex items-center justify-center rounded-full shrink-0">
+                                {promptUI?.emoji ?? '📍'}
                             </span>
                             <h3 className="text-xl font-black text-gray-800">
-                                {nav.pendingPrompt.isMrtEntry ? '準備進入捷運站' : '抵達節點'}
+                                {promptUI?.title ?? '確認節點'}
                             </h3>
                         </div>
                         <p className="text-gray-600 mb-8 font-medium leading-relaxed">
@@ -170,7 +178,7 @@ export default function NavController({ route }: NavControllerProps) {
                                 稍後再說
                             </button>
                             <button
-                                onClick={nav.confirmAdvance}
+                                onClick={handleConfirm}
                                 className="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md"
                             >
                                 確認繼續
@@ -182,17 +190,17 @@ export default function NavController({ route }: NavControllerProps) {
 
             {/* 抵達提示 */}
             {nav.isComplete && (
-                <div className="absolute top-16 left-4 right-4 z-[1000] bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center">
+                <div className="absolute top-16 left-4 right-4 z-1000 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center">
                     🎉 已抵達目的地！
                 </div>
             )}
 
             {/* 底部狀態列 */}
-            <div className="absolute bottom-14 left-4 right-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
+            <div className="absolute bottom-14 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
                 <div className="flex items-center gap-3">
                     <span className="text-2xl shrink-0">{MODE_EMOJI[nav.activeMode]}</span>
                     <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-gray-800 leading-snug">
+                        <div className="text-xs font-bold text-gray-800 leading-snug truncate">
                             {nextActionText}
                         </div>
                         <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
@@ -205,7 +213,6 @@ export default function NavController({ route }: NavControllerProps) {
                             )}
                         </div>
                     </div>
-                    {/* 開發用手動推進 */}
                     {import.meta.env.DEV && (
                         <button
                             onClick={nav.advance}

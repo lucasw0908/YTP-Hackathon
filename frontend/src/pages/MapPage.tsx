@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Clock, ChevronRight, X } from 'lucide-react';
+import { Clock, ChevronRight, X, Train } from 'lucide-react';
 import { fetchTasks, Task, TaskType, TYPE_COLORS, TYPE_EMOJI } from '../api/tasksApi';
 import { useLocation as useGPS } from '../contexts/LocationContext';
 
@@ -15,8 +15,8 @@ L.Icon.Default.mergeOptions({
 });
 
 function makeTaskMarker(type: TaskType, selected: boolean) {
-    const color = TYPE_COLORS[type];
-    const emoji = TYPE_EMOJI[type];
+    const color = TYPE_COLORS[type] || TYPE_COLORS['景點'];
+    const emoji = TYPE_EMOJI[type] || TYPE_EMOJI['景點'];
     const size = selected ? 42 : 32;
     const borderColor = selected ? "#ffeb10" : "white";
     return L.divIcon({
@@ -50,7 +50,8 @@ export default function MapPage() {
 
     useEffect(() => {
         fetchTasks(center[0], center[1])
-            .then(setTasks)
+            .then((data) => setTasks(data))
+            .catch((err) => console.error("加載任務失敗", err))
             .finally(() => setLoading(false));
     }, []);
 
@@ -62,7 +63,7 @@ export default function MapPage() {
         <div className="h-screen w-full relative">
             {/* Loading 遮罩 */}
             {loading && (
-                <div className="absolute inset-0 z-2000 bg-white/90 flex flex-col items-center justify-center gap-3">
+                <div className="absolute inset-0 z-[2000] bg-white/90 flex flex-col items-center justify-center gap-3">
                     <div className="text-4xl animate-bounce">🗺️</div>
                     <p className="text-gray-600 font-medium">正在生成今日任務...</p>
                 </div>
@@ -101,7 +102,7 @@ export default function MapPage() {
             </MapContainer>
 
             {/* 底部面板 */}
-            <div className="absolute bottom-0 left-0 right-0 z-1000 bg-white rounded-t-2xl shadow-2xl pb-10">
+            <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white rounded-t-2xl shadow-2xl pb-10 transition-transform duration-300">
                 {selected ? (
                     <TaskDetailPanel
                         task={selected}
@@ -119,6 +120,10 @@ export default function MapPage() {
 // ─── 任務列表面板 ────────────────────────────────────────────
 
 function TaskListPanel({ tasks, onSelect }: { tasks: Task[]; onSelect: (t: Task) => void }) {
+    if (tasks.length === 0) {
+        return <div className="p-6 text-center text-gray-500 font-medium">目前沒有可用任務，請稍後再試。</div>;
+    }
+
     return (
         <div className="px-4 pt-3 pb-4">
             <div className="flex items-center justify-between mb-3">
@@ -138,7 +143,7 @@ function TaskListPanel({ tasks, onSelect }: { tasks: Task[]; onSelect: (t: Task)
                 {tasks.map(task => (
                     <button
                         key={task.task_id}
-                        className="shrink-0 w-40 bg-gray-50 rounded-xl p-3 text-left border border-gray-100 active:scale-95 transition-transform"
+                        className="shrink-0 w-44 bg-gray-50 rounded-xl p-3 text-left border border-gray-100 active:scale-95 transition-transform"
                         onClick={() => onSelect(task)}
                     >
                         <div className="flex items-center gap-1.5 mb-1.5">
@@ -150,12 +155,17 @@ function TaskListPanel({ tasks, onSelect }: { tasks: Task[]; onSelect: (t: Task)
                                 {task.type}
                             </span>
                         </div>
-                        <p className="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug">
+                        <p className="text-xs font-bold text-gray-800 line-clamp-2 leading-snug h-8">
                             {task.location_name}
                         </p>
-                        <p className="text-[10px] text-gray-400 mt-1.5 flex items-center gap-0.5">
-                            <Clock size={10} /> {task.estimated_duration_mins} 分鐘
-                        </p>
+                        <div className="text-[10px] text-gray-500 mt-2 flex flex-col gap-1">
+                            <span className="flex items-center gap-1">
+                                <Clock size={10} className="text-blue-400" /> {task.estimated_duration_mins} 分鐘
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <Train size={10} className="text-purple-500" /> 捷運 {task.nearest_station} 站
+                            </span>
+                        </div>
                     </button>
                 ))}
             </div>
@@ -179,37 +189,42 @@ function TaskDetailPanel({
                     <div className="flex items-center gap-2 mb-1">
                         <span className="text-xl">{TYPE_EMOJI[task.type]}</span>
                         <span
-                            className="text-xs px-2 py-0.5 rounded-full text-white font-bold"
+                            className="text-xs px-2 py-0.5 rounded-full text-white font-bold shadow-sm"
                             style={{ background: TYPE_COLORS[task.type] }}
                         >
                             {task.type}
                         </span>
+                        <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 flex items-center gap-1">
+                            <Train size={12} /> {task.nearest_station} 站
+                        </span>
                     </div>
-                    <h3 className="font-bold text-gray-900">{task.location_name}</h3>
+                    <h3 className="font-bold text-gray-900 text-lg">{task.location_name}</h3>
                 </div>
-                <button onClick={onClose} className="p-1 text-gray-400">
-                    <X size={18} />
+                <button onClick={onClose} className="p-1.5 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors">
+                    <X size={16} />
                 </button>
             </div>
 
-            <p className="text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">
+            <p className="text-xs text-gray-500 line-clamp-3 mb-3 leading-relaxed">
                 {task.description}
             </p>
 
-            <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-3">
-                <p className="text-[11px] font-bold text-amber-700 mb-0.5">任務目標</p>
-                <p className="text-xs text-amber-800 line-clamp-2">{task.task_name}</p>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-4 shadow-sm">
+                <p className="text-[11px] font-bold text-amber-600 mb-1 flex items-center gap-1">
+                    <span>📌</span> 任務目標
+                </p>
+                <p className="text-xs font-medium text-amber-900 leading-relaxed">{task.task_name}</p>
             </div>
 
             <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <Clock size={12} /> 約 {task.estimated_duration_mins} 分鐘
+                <span className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                    <Clock size={14} /> 預計停留 {task.estimated_duration_mins} 分鐘
                 </span>
                 <button
-                    className="bg-blue-500 active:bg-blue-600 text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 text-sm shadow-md shadow-blue-200"
+                    className="bg-blue-600 active:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl flex items-center gap-1.5 text-sm shadow-lg shadow-blue-200 transition-all"
                     onClick={onGo}
                 >
-                    前往任務 <ChevronRight size={15} />
+                    前往任務 <ChevronRight size={16} strokeWidth={3} />
                 </button>
             </div>
         </div>

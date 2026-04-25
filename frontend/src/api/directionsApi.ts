@@ -1,4 +1,22 @@
 import type { Route } from '../types/wayPoint';
+
+const ROUTE_CACHE_KEY = 'active_route_cache';
+
+export function getCachedRoute(): Route | null {
+    try {
+        const raw = localStorage.getItem(ROUTE_CACHE_KEY);
+        return raw ? (JSON.parse(raw) as Route) : null;
+    } catch { return null; }
+}
+
+export function setCachedRoute(route: Route): void {
+    try { localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(route)); } catch {}
+}
+
+export function clearCachedRoute(): void {
+    localStorage.removeItem(ROUTE_CACHE_KEY);
+}
+
 export const MOCK_ROUTE: Route =
 {
     "id": "route_generated_01",
@@ -583,13 +601,13 @@ export async function fetchRoute(
 
         // 4. 解析 JSON 回傳真實結果
         const data: Route = await response.json();
+        setCachedRoute(data);
         return data;
 
     } catch (error) {
         console.error("無法取得導航路線:", error);
-
-        // 【容錯機制】如果後端 API 還沒寫好或掛掉，暫時回傳原本的 MOCK_ROUTE 讓前端不會壞
         console.warn("使用假資料 (MOCK_ROUTE) 作為備案");
+        setCachedRoute(MOCK_ROUTE);
         return MOCK_ROUTE;
     }
 }

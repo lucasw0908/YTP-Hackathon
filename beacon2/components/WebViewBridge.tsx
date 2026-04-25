@@ -6,9 +6,8 @@ import type { IBeacon } from '../types/t';
 // ⚠️ 注意：開發階段請換成你電腦的 IP 與 Vite 預設 Port (通常是 5173)
 // 確保手機跟電腦在同一個 WiFi 下
 // const WEB_URL = 'http://192.168.0.156:5173/map';
+const WEB_URL = '192.168.0.156/nav';
 // const WEB_URL = '192.168.0.156/login';
-const WEB_URL = '192.168.0.156/map';
-// const WEB_URL = 'http://10.1.161.136:5173/nav';
 
 export interface WebViewBridgeRef {
   sendBeacons: (beacons: IBeacon[]) => void;
@@ -81,10 +80,13 @@ const WebViewBridge = forwardRef<WebViewBridgeRef, Props>(({ onReady }, ref) => 
 
           break;
 
-        case 'CONSOLE':
-          // 把 WebView 裡的 console.log 轉印到 native 端（除錯用）
-          console.log('[WebView]', ...(data.payload?.args ?? []));
+        case 'CONSOLE': {
+          const level: string = data.payload?.level ?? 'log';
+          const args: any[] = data.payload?.args ?? [];
+          const fn = (console as any)[level] ?? console.log;
+          fn('[WebView]', ...args);
           break;
+        }
 
         case 'TEST_ACTION':
           console.log('網頁要求 App 執行測試動作:', data.payload);
@@ -102,10 +104,23 @@ const WebViewBridge = forwardRef<WebViewBridgeRef, Props>(({ onReady }, ref) => 
         source={{ uri: WEB_URL }}
         onMessage={handleMessage} // 監聽 Web 傳來的 postMessage
         style={styles.webview}
-        // 允許網頁使用 console.log (除錯用)
         injectedJavaScript={`
-          const consoleLog = (type, args) => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'CONSOLE', payload: { type, args } }));
-          console.log = (...args) => consoleLog('log', args);
+          (function() {
+            var rn = window.ReactNativeWebView;
+            if (!rn) return;
+            ['log','warn','error','info'].forEach(function(m) {
+              console[m] = function() {
+                try {
+                  var args = Array.prototype.slice.call(arguments).map(function(a) {
+                    try { return JSON.parse(JSON.stringify(a)); }
+                    catch(e) { return typeof a + ': ' + String(a); }
+                  });
+                  rn.postMessage(JSON.stringify({ type: 'CONSOLE', payload: { level: m, args: args } }));
+                } catch(e) {}
+              };
+            });
+          })();
+          true;
         `}
       />
     </View>

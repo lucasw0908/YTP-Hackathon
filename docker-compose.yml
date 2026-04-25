@@ -5,6 +5,9 @@ services:
     container_name: vite
     expose:
       - "5173"
+    volumes:
+      - ./frontend:/src             
+      - /src/node_modules  
 
   backend:
     build: ./backend

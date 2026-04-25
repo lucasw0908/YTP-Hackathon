@@ -13,9 +13,9 @@ L.Icon.Default.mergeOptions({
 });
 
 const MODE_COLORS: Record<TransportMode, string> = {
-    walk: '#22c55e',   // 綠
-    bike: '#f97316',   // 橘
-    metro: '#8b5cf6',  // 紫
+    walk: '#22c55e',
+    bike: '#f97316',
+    metro: '#8b5cf6',
 };
 
 const userIcon = L.divIcon({
@@ -35,7 +35,7 @@ const makeRoleIcon = (emoji: string, color: string) =>
 
 const ROLE_ICONS = {
     transition: makeRoleIcon('🔄', '#f97316'),
-    transfer: makeRoleIcon('🚇', '#8b5cf6'),
+    transfer:   makeRoleIcon('🚇', '#8b5cf6'),
     destination: makeRoleIcon('🎯', '#ef4444'),
 };
 
@@ -54,18 +54,25 @@ interface Segment {
 
 interface NavigationMapProps {
     route: Route;
+    /** 目前進行到第幾個 waypoint，只顯示剩餘路段 */
+    currentIndex?: number;
 }
 
-export default function NavigationMap({ route }: NavigationMapProps) {
+export default function NavigationMap({ route, currentIndex = 0 }: NavigationMapProps) {
     const { gps } = useLocation();
-    const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [23.0478, 119.5170];
+    const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [25.0478, 121.5170];
 
-    // 將 waypoints 依 mode 分成連續色段，coord [lng,lat] → Leaflet [lat,lng]
+    // 只顯示從 currentIndex 開始的剩餘路段
+    const remainingWaypoints = useMemo(
+        () => route.waypoints.slice(currentIndex),
+        [route, currentIndex],
+    );
+
     const segments = useMemo<Segment[]>(() => {
-        if (!route.waypoints.length) return [];
+        if (!remainingWaypoints.length) return [];
         const result: Segment[] = [];
         let cur: Segment | null = null;
-        for (const wp of route.waypoints) {
+        for (const wp of remainingWaypoints) {
             const ll: [number, number] = [wp.coord[1], wp.coord[0]];
             if (!cur || cur.mode !== wp.mode) {
                 cur = { mode: wp.mode, coords: [ll] };
@@ -75,12 +82,12 @@ export default function NavigationMap({ route }: NavigationMapProps) {
             }
         }
         return result;
-    }, [route]);
+    }, [remainingWaypoints]);
 
-    // 需要渲染 marker 的關鍵點（非普通 waypoint）
-    const keyPoints = useMemo(
-        () => route.waypoints.filter(wp => wp.role !== 'waypoint'),
-        [route]
+    // 只顯示「下一個」關鍵節點（第一個 role !== 'waypoint' 的點）
+    const nextKeyPoint = useMemo(
+        () => remainingWaypoints.find(wp => wp.role !== 'waypoint') ?? null,
+        [remainingWaypoints],
     );
 
     return (
@@ -114,7 +121,6 @@ export default function NavigationMap({ route }: NavigationMapProps) {
 
                 <MapAutoCenter gps={gps} />
 
-                {/* 分段彩色路線（捷運段用虛線避免誤解為實際道路） */}
                 {segments.map((seg, i) => (
                     <Polyline
                         key={i}
@@ -126,26 +132,25 @@ export default function NavigationMap({ route }: NavigationMapProps) {
                     />
                 ))}
 
-                {/* 關鍵節點 marker */}
-                {keyPoints.map((wp, i) => {
-                    const pos: [number, number] = [wp.coord[1], wp.coord[0]];
-                    const icon = wp.role === 'destination'
+                {/* 只顯示下一個關鍵節點 */}
+                {nextKeyPoint && (() => {
+                    const pos: [number, number] = [nextKeyPoint.coord[1], nextKeyPoint.coord[0]];
+                    const icon = nextKeyPoint.role === 'destination'
                         ? ROLE_ICONS.destination
-                        : wp.role === 'transfer'
+                        : nextKeyPoint.role === 'transfer'
                             ? ROLE_ICONS.transfer
                             : ROLE_ICONS.transition;
                     return (
-                        <Marker key={i} position={pos} icon={icon}>
-                            {wp.instruction && (
+                        <Marker position={pos} icon={icon}>
+                            {(nextKeyPoint as any).instruction && (
                                 <Popup>
-                                    <span className="text-sm font-medium">{wp.instruction}</span>
+                                    <span className="text-sm font-medium">{(nextKeyPoint as any).instruction}</span>
                                 </Popup>
                             )}
                         </Marker>
                     );
-                })}
+                })()}
 
-                {/* 使用者 GPS 位置 */}
                 {gps && (
                     <Marker position={[gps.lat, gps.lng]} icon={userIcon} zIndexOffset={1000} />
                 )}
