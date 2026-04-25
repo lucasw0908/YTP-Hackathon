@@ -182,3 +182,5 @@ local_settings.json
 
 # postgres
 postgres-data
+
+test

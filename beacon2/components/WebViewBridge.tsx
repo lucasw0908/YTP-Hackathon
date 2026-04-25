@@ -6,8 +6,9 @@ import type { IBeacon } from '../types/t';
 // ⚠️ 注意：開發階段請換成你電腦的 IP 與 Vite 預設 Port (通常是 5173)
 // 確保手機跟電腦在同一個 WiFi 下
 // const WEB_URL = 'http://192.168.0.156:5173/map';
-// const WEB_URL = 'http://192.168.0.156:5173/nav';
-const WEB_URL = 'http://192.168.0.156:5173/map';
+const WEB_URL = 'http://192.168.0.156:5173/nav';
+// const WEB_URL = 'http://192.168.0.156:5173/map';
+// const WEB_URL = 'http://192.168.0.156:5173/login';
 // const WEB_URL = 'http://10.1.161.136:5173/nav';
 
 export interface WebViewBridgeRef {

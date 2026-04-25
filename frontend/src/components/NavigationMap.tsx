@@ -83,10 +83,6 @@ export default function NavigationMap({ route }: NavigationMapProps) {
         [route]
     );
 
-    // useEffect(() => {
-    //     alert("??")
-    // }, [gps])
-
     return (
         <div className="w-full h-full relative">
             {!gps && (
