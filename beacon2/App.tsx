@@ -16,7 +16,7 @@ import {
   requestAndroidPermissions,
 } from './services/BeaconScanner';
 
-import { sendBeaconsToBackend } from './services/BackendService';
+// import { sendBeaconsToBackend } from './services/BackendService';
 import WebViewBridge, { type WebViewBridgeRef } from './components/WebViewBridge';
 
 // ─── 模擬資料產生器（無硬體時的測試模式） ───────────────────────────────────────
@@ -49,7 +49,7 @@ export default function App() {
   const dispatchBeacons = useCallback((data: IBeacon[]) => {
     setBeacons(data);
     webBridgeRef.current?.sendBeacons(data);
-    sendBeaconsToBackend(data);
+    // sendBeaconsToBackend(data);
   }, []);
 
   // ── 模擬模式：手動產生一筆隨機資料 ──
@@ -132,7 +132,20 @@ export default function App() {
         return;
       }
 
-      // 2. 持續監聽位置變化 (每 2 秒或移動 2 公尺更新一次)
+      // 2. 先立刻取一次目前位置（不依賴移動才觸發）
+      try {
+        const initial = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const initCoords = {
+          lat: initial.coords.latitude,
+          lng: initial.coords.longitude,
+        };
+        webBridgeRef.current?.sendGps(initCoords);
+        setGpsDeBug(`${initCoords.lat}-${initCoords.lng}`);
+      } catch (_) { /* 初始取得失敗不影響後續 watch */ }
+
+      // 3. 持續監聽位置變化
       locationSubscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -144,9 +157,8 @@ export default function App() {
             lat: location.coords.latitude,
             lng: location.coords.longitude,
           };
-          // 3. 把 GPS 傳給網頁！
           webBridgeRef.current?.sendGps(coords);
-          setGpsDeBug(`${coords.lat}-${coords.lng}`)
+          setGpsDeBug(`${coords.lat}-${coords.lng}`);
         }
       );
     })();
@@ -159,6 +171,11 @@ export default function App() {
     };
   }, []);
 
+  // ── 強制重整 WebView ──
+  const handleReloadWebView = useCallback(() => {
+    // 呼叫 WebViewBridge 暴露出來的 reload 方法
+    webBridgeRef.current?.reload?.();
+  }, []);
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -185,8 +202,8 @@ export default function App() {
                   {item.stationCode ? `🚉 ${item.stationCode}` : '❓ 未知站點'}
                   {item.stationId ? ` (${item.stationId})` : ''}
                 </Text>
-
                 {/* 顯示解密出的 BID */}
+                {/* 
                 <Text style={styles.itemSubtitle}>
                   BID: {item.bid !== undefined && item.bid >= 0 ? item.bid : '無效'}
                 </Text>
@@ -196,7 +213,8 @@ export default function App() {
                 </Text>
                 <Text style={styles.itemSubtitle}>
                   信號: {item.rssi} dBm
-                </Text>
+                </Text> 
+                */}
               </View>
             )}
 
@@ -208,11 +226,19 @@ export default function App() {
           />
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleRefresh} activeOpacity={0.75}>
-          <Text style={styles.buttonText}>
-            {isMockMode ? '🎲  手動刷新（模擬資料）' : '🔄  手動重新掃描'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleRefresh} activeOpacity={0.75}>
+            <Text style={styles.buttonText}>
+              {isMockMode ? '🎲 模擬資料' : '🔄 重新掃描'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleReloadWebView} activeOpacity={0.75}>
+            <Text style={styles.buttonText}>
+              🌐 重整網頁
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 下半部：WebView */}
@@ -228,7 +254,7 @@ const styles = StyleSheet.create({
 
   // ── 原生區塊 ──
   nativeArea: {
-    height: 180,
+    height: 120,
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 8,
@@ -241,7 +267,7 @@ const styles = StyleSheet.create({
 
   listContainer: { flex: 1, marginVertical: 8 },
   item: {
-    padding: 10,
+    padding: 0,
     backgroundColor: '#f8f9fa',
     marginRight: 8,
     borderRadius: 8,
@@ -258,9 +284,21 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     backgroundColor: '#007AFF',
     borderRadius: 8,
-    paddingVertical: 7,
+    paddingVertical: 0,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  buttonRow: {
+    flexDirection: 'row',
+    marginTop: 'auto',
+    justifyContent: 'space-between',
+    gap: 10, // 如果你的 RN 版本較舊不支援 gap，可以在按鈕加上 marginHorizontal
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF', // 原本的藍色
+  },
+  secondaryButton: {
+    backgroundColor: '#34C759', // 綠色 (用來區分重整網頁)
+  },
 });

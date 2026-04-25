@@ -20,13 +20,22 @@ const stationsData = stationsRaw as Station[];
 interface MrtMapProps {
   selectedStation?: Station | null;
   onStationSelect?: (station: Station) => void;
+  /** 導航模式：隱藏標題 header */
+  hideHeader?: boolean;
+  /** 路線經過的捷運站 code 列表（依序） */
+  routeStationCodes?: string[];
+  /** 目前使用者在 routeStationCodes 中的索引（-1 = 未知） */
+  activeRouteIndex?: number;
 }
 
-// ... (前面 import 保持不變)
-
-export default function MrtMap({ selectedStation = null, onStationSelect }: MrtMapProps) {
+export default function MrtMap({
+  selectedStation = null,
+  onStationSelect,
+  hideHeader = false,
+  routeStationCodes,
+  activeRouteIndex = -1,
+}: MrtMapProps) {
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
-
   const { currentStationCode } = useLocation();
 
   const currentStation = useMemo<Station | null>(() => {
@@ -34,29 +43,41 @@ export default function MrtMap({ selectedStation = null, onStationSelect }: MrtM
     return stationsData.find((s) => s.id === currentStationCode) || null;
   }, [currentStationCode]);
 
+  // 路線站點物件 (保持順序，允許不同 code 對應同位置)
+  const routeStations = useMemo(() => {
+    if (!routeStationCodes) return [];
+    return routeStationCodes.map((code, idx) => ({
+      station: stationsData.find(s => s.id === code) ?? null,
+      code,
+      idx,
+    })).filter(e => e.station !== null) as { station: Station; code: string; idx: number }[];
+  }, [routeStationCodes]);
+
   const handleStationClick = (station: Station) => {
-    if (onStationSelect) {
-      onStationSelect(station);
-    }
+    onStationSelect?.(station);
   };
 
+  const mapAreaTop = hideHeader ? 0 : 76;
+
   return (
-    // 🌟 1. 拿掉 flex flex-col，改用相對定位
-    <div className="mrt-map-container /bg-green-500 relative h-full w-full">
-
-      {/* 🌟 2. 讓 Header 絕對定位在最上方 */}
-      <div className="absolute top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur shadow-sm p-4 border-b border-gray-200">
-        <h1 className="flex items-center gap-2 text-xl font-bold">
-          <Navigation size={24} className="text-blue-500" />
-          台北捷運大富翁
-        </h1>
-        <div className="text-xs text-gray-500 mt-1">
-          {currentStation ? '📡 真實藍牙定位中' : '⚠️ 等待定位訊號...'}
+    <div className="mrt-map-container relative h-full w-full">
+      {/* Header（可隱藏） */}
+      {!hideHeader && (
+        <div className="absolute top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur shadow-sm p-4 border-b border-gray-200">
+          <h1 className="flex items-center gap-2 text-xl font-bold">
+            <Navigation size={24} className="text-blue-500" />
+            台北捷運大富翁
+          </h1>
+          <div className="text-xs text-gray-500 mt-1">
+            {currentStation ? '📡 真實藍牙定位中' : '⚠️ 等待定位訊號...'}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 🌟 3. 捨棄 flex-1，強制使用絕對定位撐開剩下的空間 (避開 Header 約 76px 的高度) */}
-      <div className="absolute top-[76px] left-0 right-0 bottom-0 overflow-hidden">
+      <div
+        className="absolute left-0 right-0 bottom-0 overflow-hidden"
+        style={{ top: mapAreaTop }}
+      >
         <TransformWrapper
           initialScale={1.5}
           minScale={0.5}
@@ -73,12 +94,9 @@ export default function MrtMap({ selectedStation = null, onStationSelect }: MrtM
             contentClass="react-transform-component"
           >
             <div className="map-content">
-              <img
-                src={mapImg}
-                alt="Taipei MRT Map"
-                className="map-image"
-              />
+              <img src={mapImg} alt="Taipei MRT Map" className="map-image" />
 
+              {/* 一般站點按鈕 */}
               {stationsData.map((station) => (
                 <button
                   key={station.id}
@@ -96,13 +114,52 @@ export default function MrtMap({ selectedStation = null, onStationSelect }: MrtM
                 />
               ))}
 
+              {/* 路線站點高亮徽章 */}
+              {routeStations.map(({ station, idx }) => {
+                const isPast = activeRouteIndex >= 0 && idx < activeRouteIndex;
+                const isActive = activeRouteIndex >= 0 && idx === activeRouteIndex;
+                const bg = isPast ? '#9ca3af' : isActive ? '#3b82f6' : '#f97316';
+                const size = isActive ? 22 : 18;
+                return (
+                  <div
+                    key={`route-${idx}`}
+                    className="absolute pointer-events-none z-20"
+                    style={{
+                      left: station.x,
+                      top: station.y,
+                      transform: `translate(-50%, calc(-100% - 6px))`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: size,
+                        height: size,
+                        borderRadius: '50%',
+                        background: bg,
+                        border: '2px solid white',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 9,
+                        fontWeight: 'bold',
+                        color: 'white',
+                      }}
+                    >
+                      {idx + 1}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 使用者目前位置（beacon） */}
               {currentStation && (
                 <div
-                  className="absolute pointer-events-none transition-all duration-500 z-10 flex flex-col items-center"
+                  className="absolute pointer-events-none transition-all duration-500 z-30 flex flex-col items-center"
                   style={{
-                    left: `${currentStation.x}px`,
-                    top: `${currentStation.y}px`,
-                    transform: 'translate(-37%, -45%)'
+                    left: currentStation.x,
+                    top: currentStation.y,
+                    transform: 'translate(-37%, -45%)',
                   }}
                 >
                   <MapPin size={32} fill="#3b82f6" color="white" className="animate-pulse drop-shadow-md" />
@@ -112,13 +169,14 @@ export default function MrtMap({ selectedStation = null, onStationSelect }: MrtM
                 </div>
               )}
 
+              {/* 選中站點 */}
               {selectedStation && (
                 <div
-                  className="absolute pointer-events-none transition-all duration-300 z-20 flex flex-col items-center"
+                  className="absolute pointer-events-none transition-all duration-300 z-40 flex flex-col items-center"
                   style={{
-                    left: `${selectedStation.x}px`,
-                    top: `${selectedStation.y}px`,
-                    transform: 'translate(-31%, -90%)'
+                    left: selectedStation.x,
+                    top: selectedStation.y,
+                    transform: 'translate(-31%, -90%)',
                   }}
                 >
                   <MapPin size={36} fill="#e53e3e" color="white" className="animate-bounce drop-shadow-lg" />

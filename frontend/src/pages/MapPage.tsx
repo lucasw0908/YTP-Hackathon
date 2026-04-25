@@ -18,9 +18,10 @@ function makeTaskMarker(type: TaskType, selected: boolean) {
     const color = TYPE_COLORS[type];
     const emoji = TYPE_EMOJI[type];
     const size = selected ? 42 : 32;
+    const borderColor = selected ? "#ffeb10" : "white";
     return L.divIcon({
         className: '',
-        html: `<div style="width:${size}px;height:${size}px;background:${color};border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:${selected ? 20 : 15}px;transition:all .15s;">${emoji}</div>`,
+        html: `<div style="width:${size}px;height:${size}px;background:${color};border-radius:50%;border:3px solid ${borderColor};box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:${selected ? 20 : 15}px;transition:all .15s;">${emoji}</div>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
     });
@@ -100,7 +101,7 @@ export default function MapPage() {
             </MapContainer>
 
             {/* 底部面板 */}
-            <div className="absolute bottom-0 left-0 right-0 z-1000 bg-white rounded-t-2xl shadow-2xl">
+            <div className="absolute bottom-0 left-0 right-0 z-1000 bg-white rounded-t-2xl shadow-2xl pb-10">
                 {selected ? (
                     <TaskDetailPanel
                         task={selected}

@@ -35,7 +35,7 @@ const makeRoleIcon = (emoji: string, color: string) =>
 
 const ROLE_ICONS = {
     transition: makeRoleIcon('🔄', '#f97316'),
-    transfer:   makeRoleIcon('🚇', '#8b5cf6'),
+    transfer: makeRoleIcon('🚇', '#8b5cf6'),
     destination: makeRoleIcon('🎯', '#ef4444'),
 };
 
@@ -58,7 +58,7 @@ interface NavigationMapProps {
 
 export default function NavigationMap({ route }: NavigationMapProps) {
     const { gps } = useLocation();
-    const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [25.0478, 121.5170];
+    const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [23.0478, 119.5170];
 
     // 將 waypoints 依 mode 分成連續色段，coord [lng,lat] → Leaflet [lat,lng]
     const segments = useMemo<Segment[]>(() => {
@@ -82,6 +82,10 @@ export default function NavigationMap({ route }: NavigationMapProps) {
         () => route.waypoints.filter(wp => wp.role !== 'waypoint'),
         [route]
     );
+
+    // useEffect(() => {
+    //     alert("??")
+    // }, [gps])
 
     return (
         <div className="w-full h-full relative">
@@ -114,14 +118,15 @@ export default function NavigationMap({ route }: NavigationMapProps) {
 
                 <MapAutoCenter gps={gps} />
 
-                {/* 分段彩色路線 */}
+                {/* 分段彩色路線（捷運段用虛線避免誤解為實際道路） */}
                 {segments.map((seg, i) => (
                     <Polyline
                         key={i}
                         positions={seg.coords}
                         color={MODE_COLORS[seg.mode]}
-                        weight={6}
-                        opacity={0.8}
+                        weight={seg.mode === 'metro' ? 5 : 6}
+                        opacity={0.85}
+                        dashArray={seg.mode === 'metro' ? '10, 8' : undefined}
                     />
                 ))}
 
@@ -131,8 +136,8 @@ export default function NavigationMap({ route }: NavigationMapProps) {
                     const icon = wp.role === 'destination'
                         ? ROLE_ICONS.destination
                         : wp.role === 'transfer'
-                        ? ROLE_ICONS.transfer
-                        : ROLE_ICONS.transition;
+                            ? ROLE_ICONS.transfer
+                            : ROLE_ICONS.transition;
                     return (
                         <Marker key={i} position={pos} icon={icon}>
                             {wp.instruction && (

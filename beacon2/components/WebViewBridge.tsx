@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import type { IBeacon } from '../types/t';
@@ -6,27 +6,30 @@ import type { IBeacon } from '../types/t';
 // ⚠️ 注意：開發階段請換成你電腦的 IP 與 Vite 預設 Port (通常是 5173)
 // 確保手機跟電腦在同一個 WiFi 下
 // const WEB_URL = 'http://192.168.0.156:5173/map';
-const WEB_URL = 'http://192.168.0.156:5173/nav';
+// const WEB_URL = 'http://192.168.0.156:5173/nav';
+const WEB_URL = 'http://192.168.0.156:5173/map';
 // const WEB_URL = 'http://10.1.161.136:5173/nav';
 
 export interface WebViewBridgeRef {
   sendBeacons: (beacons: IBeacon[]) => void;
   sendGps: (gps: { lat: number; lng: number }) => void;
+  reload: () => void;
 }
 
 interface Props {
   onReady?: () => void;
 }
 
+
 const WebViewBridge = forwardRef<WebViewBridgeRef, Props>(({ onReady }, ref) => {
   const webviewRef = useRef<WebView>(null);
-  const [isWebReady, setIsWebReady] = useState(false);
-  const pendingRef = useRef<IBeacon[] | null>(null);
+  // ref 而非 state：避免 useImperativeHandle 的 stale closure 問題
+  const isWebReadyRef = useRef(false);
+  const pendingBeaconsRef = useRef<IBeacon[] | null>(null);
+  const pendingGpsRef = useRef<{ lat: number; lng: number } | null>(null);
 
-  // 封裝「傳送訊息給 Web」的邏輯
   function sendMessageToWeb(type: string, payload: any) {
     const message = JSON.stringify({ type, payload });
-    // 透過觸發 CustomEvent，讓 Web 端的 React 可以用 addEventListener 監聽
     const script = `
       window.dispatchEvent(new CustomEvent('AppToWeb', { detail: ${message} }));
       true;
@@ -36,43 +39,56 @@ const WebViewBridge = forwardRef<WebViewBridgeRef, Props>(({ onReady }, ref) => 
 
   useImperativeHandle(ref, () => ({
     sendBeacons(beacons: IBeacon[]) {
-      if (!isWebReady || !webviewRef.current) {
-        pendingRef.current = beacons; // Web 還沒準備好，先暫存
+      if (!isWebReadyRef.current || !webviewRef.current) {
+        pendingBeaconsRef.current = beacons;
         return;
       }
       sendMessageToWeb('BEACON_UPDATE', beacons);
     },
     sendGps(gps: { lat: number; lng: number }) {
-      if (!isWebReady || !webviewRef.current) return;
+      if (!isWebReadyRef.current || !webviewRef.current) {
+        pendingGpsRef.current = gps; // 暫存，等 WEB_READY 補發
+        return;
+      }
       sendMessageToWeb('GPS_UPDATE', gps);
+    },
+    reload: () => {
+      // 呼叫實際 WebView 的重整方法
+      webviewRef.current?.reload();
     }
   }));
 
-  // 接收來自 Web 的訊息
   function handleMessage(e: WebViewMessageEvent) {
     try {
       const data = JSON.parse(e.nativeEvent.data);
-      console.log('[App 收到 Web 訊息]:', data.type, data.payload);
 
       switch (data.type) {
         case 'WEB_READY':
-          // 網頁端的 React 已經 Mount 完成！
-          setIsWebReady(true);
+          isWebReadyRef.current = true;
           onReady?.();
 
-          // 補發暫存的 Beacon 資料
-          if (pendingRef.current) {
-            sendMessageToWeb('BEACON_UPDATE', pendingRef.current);
-            pendingRef.current = null;
+          // 補發暫存的 Beacon
+          if (pendingBeaconsRef.current) {
+            sendMessageToWeb('BEACON_UPDATE', pendingBeaconsRef.current);
+            pendingBeaconsRef.current = null;
           }
+
+          // 補發暫存的 GPS
+          if (pendingGpsRef.current) {
+            sendMessageToWeb('GPS_UPDATE', pendingGpsRef.current);
+            pendingGpsRef.current = null;
+          }
+
+          break;
+
+        case 'CONSOLE':
+          // 把 WebView 裡的 console.log 轉印到 native 端（除錯用）
+          console.log('[WebView]', ...(data.payload?.args ?? []));
           break;
 
         case 'TEST_ACTION':
-          // 測試 Web 呼叫 App
           console.log('網頁要求 App 執行測試動作:', data.payload);
           break;
-
-        // 之後可以加入 'OPEN_CAMERA', 'FETCH_GPS' 等等...
       }
     } catch (err) {
       console.warn('解析 WebView 訊息失敗', err);
