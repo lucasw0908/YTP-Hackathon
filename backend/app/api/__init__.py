@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Response, Depends
 
 from .main import router as main_router
+from .login import router as login_router
 
 
 async def resp_headers(response: Response):
@@ -22,4 +23,5 @@ def get_api_router() -> APIRouter:
         dependencies=[Depends(resp_headers)]
     )
     api_router.include_router(main_router)
+    api_router.include_router(login_router)
     return api_router
