@@ -3,7 +3,7 @@ import { useState } from 'react';
 import BasicSetup from './components/BasicSetup';
 import HotelSetup from './components/HotelSetup';
 import PreferenceQuiz from './components/PreferenceQuiz';
-import { submitTravelPlan } from './api/mockBackend';
+import { submitTravelPlan } from './api/planApi';
 import { AppStage, TravelPlanPayload, BasicTravelData, AccommodationData, PreferenceAnswers } from './types';
 
 

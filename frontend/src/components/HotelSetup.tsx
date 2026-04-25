@@ -1,19 +1,13 @@
 // src/components/HotelSetup.tsx
 import { useState, ChangeEvent } from 'react';
-import { fetchRecommendedHotels } from '../api/mockBackend';
+// 改為從模組化的 API 引入
+import { fetchRecommendedHotels, searchHotelsByKeyword } from '../api/hotelApi';
 import { AccommodationData, HotelRecommendation } from '../types';
 import { Search, MapPin } from 'lucide-react';
 
 interface HotelSetupProps {
     onNext: (data: AccommodationData) => void;
 }
-
-// 模擬的本地飯店資料庫 (Hackathon 專用)，實戰中這會替換成 Google Places API
-const MOCK_HOTEL_DB = [
-    '台北晶華酒店', '台北 W 飯店', '君悅酒店', '西門町意舍酒店', 
-    '九份海論民宿', '九份山城逸境', '北投麗禧溫泉酒店', '日勝生加賀屋',
-    '板橋凱撒大飯店', '新板希爾頓酒店'
-];
 
 export default function HotelSetup({ onNext }: HotelSetupProps) {
     const [hasHotel, setHasHotel] = useState<boolean | null>(null);
@@ -27,17 +21,15 @@ export default function HotelSetup({ onNext }: HotelSetupProps) {
     const [recommendations, setRecommendations] = useState<HotelRecommendation[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // 處理已決定住宿的關鍵字輸入與過濾
-    const handleHotelInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // 處理已決定住宿的關鍵字輸入與過濾 (改為非同步呼叫 API)
+    const handleHotelInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
         const keyword = e.target.value;
         setHotelInput(keyword);
 
         if (keyword.trim().length > 0) {
-            // 模擬模糊搜尋
-            const filtered = MOCK_HOTEL_DB.filter(name => 
-                name.toLowerCase().includes(keyword.toLowerCase())
-            );
-            setAutoCompleteResults(filtered);
+            // 呼叫模組化的 API 取得建議名單
+            const results = await searchHotelsByKeyword(keyword);
+            setAutoCompleteResults(results);
         } else {
             setAutoCompleteResults([]);
         }
@@ -49,7 +41,7 @@ export default function HotelSetup({ onNext }: HotelSetupProps) {
         setAutoCompleteResults([]); // 選完收起選單
     };
 
-    // 送出已決定的飯店 (可為選單內，也可為使用者強制自填的冷門民宿)
+    // 送出已決定的飯店
     const submitManualHotel = () => {
         if (!hotelInput.trim()) return alert("請輸入或選擇住宿名稱");
         console.log("[Debug] 確定住宿:", hotelInput);
@@ -93,7 +85,7 @@ export default function HotelSetup({ onNext }: HotelSetupProps) {
                 </div>
             )}
 
-            {/* 情境 A：已決定住宿 (加入模糊搜尋) */}
+            {/* 情境 A：已決定住宿 */}
             {hasHotel === true && (
                 <div className="flex flex-col flex-1 animate-fadeIn">
                     <label className="block text-sm font-medium text-gray-700 mb-2">請搜尋您的飯店或民宿名稱</label>
@@ -138,7 +130,7 @@ export default function HotelSetup({ onNext }: HotelSetupProps) {
                 </div>
             )}
 
-            {/* 情境 B：需要推薦飯店 (UI 微調) */}
+            {/* 情境 B：需要推薦飯店 */}
             {hasHotel === false && (
                 <div className="flex flex-col flex-1 animate-fadeIn">
                     <label className="block text-sm font-medium text-gray-700 mb-2">您想住在哪個區域？(產生推薦清單)</label>
