@@ -6,7 +6,7 @@ from pwdlib import PasswordHash
 from sqlalchemy import String, Boolean, DateTime, PickleType
 from sqlalchemy.orm import Mapped, mapped_column
 
-from . import Base, DatabaseDep
+from . import Base, SessionDep
 from ..config import get_settings
 
 
@@ -68,7 +68,7 @@ class Users(Base):
         return f"<{'Admin' if self.is_admin else 'User'} {self.username} (id={self.id})>"
     
     
-    async def set_password(self, password: str, session: DatabaseDep) -> None:
+    async def set_password(self, password: str, session: SessionDep) -> None:
         """
         Set a new password for the user.
         
@@ -109,7 +109,7 @@ class Users(Base):
     #     })
     
     
-    async def update(self, data: dict, session: DatabaseDep) -> None:
+    async def update(self, data: dict, session: SessionDep) -> None:
         """
         Update the user with the provided data.
         
