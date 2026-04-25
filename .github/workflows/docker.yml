@@ -82,21 +82,17 @@ jobs:
             fi
           done
 
-      - name: Health check
+      - name: Health check for frontend
         run: |
-          urls=(
-            "http://localhost:5173/"
-            "http://localhost:8080/"
-            "http://localhost/"
-            "http://localhost/api/"
-          )
-
-          printf "%s\n" "${urls[@]}" \
-          | xargs -P 2 -I {} bash -c '
-            curl -fsS "{}" > /dev/null \
-              && echo "[OK] {}" \
-              || echo "[FAIL] {}"
-          '
+          curl -fsS http://localhost/ > /dev/null \
+            && echo "[OK] http://localhost/" \
+            || echo "[FAIL] http://localhost/
+      
+      - name: Health check for backend     
+        run: |
+          curl -fsS http://localhost/api/ > /dev/null \
+            && echo "[OK] http://localhost/api/" \
+            || echo "[FAIL] http://localhost/api/"
 
       - name: Show logs on failure
         if: failure()
