@@ -1,78 +1,10 @@
 # # requirements:
 # # pip install requests
 # # pip install bs4
+# "data" 的相對路徑還沒修
 
-# import requests
-# from bs4 import BeautifulSoup
-# # from bs4.element import Tag
-# # import urllib.parse
-# # import time
-# # import random
-
-# def get_hotels_info(district):
-#     base_url = "https://stest.taiwanstay.net.tw/TSA/web_page/"
-#     target_url = base_url + "TSA020100.jsp"
-
-#     session = requests.Session()
-#     headers = {
-#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-#         "Referer": base_url + "TSA010100.jsp"
-#     }
-
-#     payload = {
-#         "Method": "true",
-#         "sendurl": "TSA020100",
-#         "hoci_city1": "臺北市",
-#         "hoci_area1": district,
-#     }
-
-#     response = session.post(target_url, data=payload, headers=headers)
-#     output = []
-
-#     if response.status_code == 200:
-#         soup = BeautifulSoup(response.text, 'html.parser')
-#         hotels = soup.find_all('a', class_='searchtitle')
-
-#         for hotel in hotels:
-#             name = hotel.get_text(strip=True)
-#             hotel_href = hotel.get('href')
-#             if isinstance(hotel_href, str):
-#                 official_link = base_url + hotel_href
-#             else:
-#                 official_link = base_url # 或給個預設值            
-#             # 去 Tripadvisor 找訂房連結
-#             # print(f"正在比價: {name}...")
-#             # booking_link = tripadvisor_search(name)
-#             # print(f"tripadvisor_output: {booking_link} \n")
-            
-#             # output += f"飯店名稱: {name}\n"
-#             # output += f"官方詳細介紹: {official_link}\n"
-
-#             output.append({
-#                 "name": name,
-#                 "official_link": official_link,
-#             })
-
-#             # if booking_link:
-#             #     output += f"Tripadvisor 訂房連結: {booking_link}\n"
-#             # else:
-#             #     output += "Tripadvisor 訂房連結: 未找到匹配結果\n"
-#             # output += "-" * 30 + "\n\n"
-            
-#             # time.sleep(0.5) 
-#     else:
-#         return None
-
-#     return output
-
-
-
-# # for debug
-# # if __name__ == "__main__":
-# #     # 測試萬華區
-# #     print(get_hotels_info("萬華區"))
-
-
+import os
+import json
 import requests
 from bs4 import BeautifulSoup
 import time # 用於設定延遲，避免頻繁請求被鎖 IP
@@ -204,15 +136,75 @@ def get_hotels_info(district):
 def get_all_hotels():
     return get_hotels_info("")
 
+def save_hotels_to_json(hotels, directory, filename):
+    os.makedirs(directory, exist_ok=True)
+    with open(os.path.join(directory, filename), 'w', encoding='utf-8') as file:
+        json.dump(hotels, file, ensure_ascii=False, indent=4)
+
+def load_hotels_from_json(directory, filename):
+    try:
+        with open(os.path.join(directory, filename), 'r', encoding='utf-8') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return None
+
+
+def find_hotel(keyword):
+    # 嘗試載入旅館資料，如果檔案不存在則給予提示
+    
+    hotels = load_hotels_from_json("data", "hotels.json")
+    if hotels is None:
+        hotels = get_all_hotels();
+        save_hotels_to_json(hotels, "data", "hotels.json")
+        print("找不到 data/hotels.json，已經先執行爬蟲並儲存資料！")
+
+    if hotels is None:
+        return None
+
+    matched_hotels = []
+    
+    # 確保 keyword 存在且是字串
+    if not keyword or not isinstance(keyword, str):
+        return matched_hotels
+
+    for hotel in hotels:
+        # 取得 name 和 address。如果原本是 None，就把它轉換成空字串 "" 方便比對
+        name = hotel.get("name") or ""
+        address = hotel.get("address") or ""
+        
+        # 條件 1：檢查 Name (A contain B or B contain A)
+        # 注意：必須加上 name != "" 的判斷，否則空的 name 會被判定為包含在 keyword 裡面 ( "" in keyword 永遠為 True)
+        match_name = (keyword in name) or (name != "" and name in keyword)
+        
+        # 條件 2：檢查 Address (A contain B or B contain A)
+        match_address = (keyword in address) or (address != "" and address in keyword)
+        
+        # 只要名稱或地址有任何一個符合條件，就加入結果清單
+        if match_name or match_address:
+            matched_hotels.append(hotel)
+            
+    return matched_hotels 
+
 # for debug
 if __name__ == "__main__":
     # 測試士林區
     # results = get_hotels_info("士林區")
     
-    results = get_all_hotels()
+    # results = get_all_hotels()
 
-    if results:
-        print(f"\n爬取完成！總共抓到 {len(results)} 筆旅館資料。\n")
-        # 印出最後一筆資料確認是否成功爬到最後一頁
-        print("最後一筆資料範例：")
-        print(results[-1])
+    # if results:
+    #     print(f"\n爬取完成！總共抓到 {len(results)} 筆旅館資料。\n")
+    #     # 印出最後一筆資料確認是否成功爬到最後一頁
+    #     print("最後一筆資料範例：")
+    #     print(results[-1])
+
+    # save_hotels_to_json(results, "data", "hotels.json")
+    # finded_hotels = find_hotel("士林區")
+    # if finded_hotels is None:
+    #     print("找不到符合關鍵字的旅館資料！")
+    # if isinstance(finded_hotels, list):
+    #     print(f"找到 {len(finded_hotels)} 筆符合關鍵字的旅館資料！")
+    #     print(finded_hotels)
+    # else:
+    #     print(f"找到符合關鍵字的旅館資料！")
+    #     print(finded_hotels)
