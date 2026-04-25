@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 // 這裡假設你把 BasicSetup, HotelSetup, PreferenceQuiz 包裝成了這個頁面
-import Landing from './pages/landing';
+import Landing from './pages/Landing';
 // 地圖頁面的空殼
 import MapPage from './pages/MapPage';
 
