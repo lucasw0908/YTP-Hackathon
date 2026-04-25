@@ -44,7 +44,7 @@ def get_hotels_info(district):
             if title_tag:
                 name = title_tag.get_text(strip=True)
                 raw_href = title_tag.get('href')
-                name_url = (base_url + raw_href) if raw_href else None
+                name_url = (base_url + raw_href) if isinstance(raw_href, str) else None
             else:
                 name = None
                 name_url = None
