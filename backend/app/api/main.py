@@ -2,7 +2,8 @@ import logging
 
 from fastapi import APIRouter
 
-from ..utils.hotel import get_all_hotels
+from ..config import SettingsDep
+from ..utils.hotel import find_hotel
 
 
 log = logging.getLogger(__name__)
@@ -13,5 +14,5 @@ async def root():
     return {"message": "Hello, World!"}
 
 @router.get("/hotel")
-async def hotel():
-    return get_all_hotels()
+async def hotel(keyword: str, settings: SettingsDep):
+    return find_hotel(keyword, settings)

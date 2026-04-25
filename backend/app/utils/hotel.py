@@ -1,12 +1,13 @@
 import os
 import json
 import logging
+import re
+from typing import Optional
 
 import requests
-import re
 from bs4 import BeautifulSoup
 
-from ..config import SettingsDep
+from ..config import Settings
 
 
 log = logging.getLogger(__name__)
@@ -138,11 +139,11 @@ def get_hotels_info(district):
 def get_all_hotels():
     return get_hotels_info("")
 
-def save_hotels_to_json(hotels, settings: SettingsDep):
+def save_hotels_to_json(hotels, settings: Settings):
     with open(os.path.join(settings.BASEDIR, "data", "hotel.json"), 'w', encoding='utf-8') as file:
         json.dump(hotels, file, ensure_ascii=False, indent=4)
 
-def load_hotels_from_json(settings: SettingsDep):
+def load_hotels_from_json(settings: Settings):
     try:
         with open(os.path.join(settings.BASEDIR, "data", "hotel.json"), 'r', encoding='utf-8') as file:
             return json.load(file)
@@ -150,13 +151,13 @@ def load_hotels_from_json(settings: SettingsDep):
         return None
 
 
-def find_hotel(keyword):
+def find_hotel(keyword: str, settings: Settings):
     # 嘗試載入旅館資料，如果檔案不存在則給予提示
     
-    hotels: list[dict] = load_hotels_from_json()
+    hotels: Optional[list[dict]] = load_hotels_from_json(settings)
     if hotels is None:
         hotels = get_all_hotels()
-        save_hotels_to_json(hotels)
+        save_hotels_to_json(hotels, settings)
         log.debug("找不到 data/hotels.json，已經先執行爬蟲並儲存資料！")
 
     if hotels is None:
