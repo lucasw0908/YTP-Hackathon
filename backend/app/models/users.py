@@ -1,37 +1,30 @@
 import logging
-from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
-from pwdlib import PasswordHash
-from sqlalchemy import String, Boolean, DateTime, PickleType
+from fastapi import HTTPException
+from sqlalchemy import String, Boolean, select
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import Base, SessionDep
+from .mixin import TimeStampMixin
 from ..config import get_settings
 
 
 log = logging.getLogger(__name__)
 settings = get_settings()
-password_hasher = PasswordHash.recommended()
 
 
-class Users(Base):
+class Users(Base, TimeStampMixin):
     __tablename__ = "users"
     
     id: Mapped[int] = mapped_column(primary_key=True)
 
     username: Mapped[str] = mapped_column(String(32), nullable=False)
-    password: Mapped[str] = mapped_column(String(64), nullable=True)
     email: Mapped[str] = mapped_column(String(64), nullable=False)
-    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
-    bio: Mapped[Optional[str]] = mapped_column(String(75), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, onupdate=datetime.now, default=datetime.now, nullable=False)
-
-    locale: Mapped[str] = mapped_column(String(8), nullable=False, default=settings.defaults.locale)
+    locale: Mapped[str] = mapped_column(String(8), nullable=False, default=settings.defaults.LOCALE)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    logins: Mapped[list] = mapped_column(PickleType, nullable=False, default=list)
     
     # Verification fields
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -43,16 +36,13 @@ class Users(Base):
     google_id: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True)
     
     
-    def __init__(self, username: str, password: Optional[str], email: str, is_admin: bool=False,
-                 unlimited_access: bool=False, locale: Optional[str]=None, avatar_url: Optional[str]=None,
+    def __init__(self, username: str, email: str,
+                 locale: Optional[str]=None, avatar_url: Optional[str]=None,
                  discord_id: Optional[str]=None, google_id: Optional[str]=None
                  ):
 
         self.username = username
-        self.password = password_hasher.hash(password) if password else None
         self.email = email
-        self.is_admin = is_admin
-        self.unlimited_access = unlimited_access
         
         self.locale = locale or self.locale
         self.avatar_url = avatar_url or self.avatar_url
@@ -65,51 +55,10 @@ class Users(Base):
         
     
     def __repr__(self):
-        return f"<{'Admin' if self.is_admin else 'User'} {self.username} (id={self.id})>"
+        return f"<User '{self.username}' (id={self.id})>"
     
     
-    async def set_password(self, password: str, session: SessionDep) -> None:
-        """
-        Set a new password for the user.
-        
-        Parameters
-        ----------
-        password : str
-            The new password to set.
-        """
-        self.password = password_hasher.hash(password)
-        session.commit()
-    
-    
-    def check_password(self, hashed_password: str) -> bool:
-        """
-        Check if the provided password matches the stored password.
-        
-        Parameters
-        ----------
-        hashed_password : str
-            The password to check.
-        
-        Returns
-        -------
-        bool
-            True if the password matches, False otherwise.
-        """
-        return password_hasher.verify(self.password, hashed_password)
-    
-    
-    # def update_login_info(self) -> None:
-
-    #     if not self.logins:
-    #         self.logins = []
-            
-    #     self.logins.append({
-    #         "ip": request.remote_addr,
-    #         "time": datetime.now().strftime(DATETIME_FORMAT),
-    #     })
-    
-    
-    async def update(self, data: dict, session: SessionDep) -> None:
+    async def update(self, data: dict[str, Any], session: SessionDep) -> None:
         """
         Update the user with the provided data.
         
@@ -120,9 +69,16 @@ class Users(Base):
         """
         for key, value in data.items():
             if hasattr(self, key):
-                if key == "password":
-                    setattr(self, key, password_hasher.hash(value))
-                else:
-                    setattr(self, key, value)
+                setattr(self, key, value)
         
         session.commit()
+
+
+async def get_user(db_session: AsyncSession, google_id: Optional[str]=None, discord_id: Optional[str]=None) -> Users:
+    if google_id is not None:
+        user = (await db_session.scalars(select(Users).where(Users.google_id == google_id))).first()
+    if discord_id is not None:
+        user = (await db_session.scalars(select(Users).where(Users.discord_id == discord_id))).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
