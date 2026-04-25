@@ -10,12 +10,12 @@ from ..utils.oauth import DiscordOAuthManager, GoogleOAuthManager
 log = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/user",
-    tags=["user"]
+    prefix="/oauth",
+    tags=["oauth"]
 )
 
 
-@router.get("/oauth/google/login")
+@router.get("/google/login")
 async def google_login(settings: SettingsDep):
     flow = GoogleOAuthManager(settings).google_flow
 
@@ -26,7 +26,7 @@ async def google_login(settings: SettingsDep):
     return {"url": auth_url}
 
 
-@router.get("/oauth/google/callback")
+@router.get("/google/callback")
 async def google_callback(
     request: Request,
     settings: SettingsDep,
@@ -51,12 +51,12 @@ async def google_callback(
     }
 
 
-@router.get("/oauth/discord/login")
+@router.get("/discord/login")
 async def discord_login(settings: SettingsDep):
     return {"url": settings.oauth.DISCORD_OAUTH_URL}
 
 
-@router.get("/oauth/discord/callback")
+@router.get("/discord/callback")
 async def discord_callback(
     request: Request,
     settings: SettingsDep,
