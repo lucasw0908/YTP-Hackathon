@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Response, Depends
 
 from .main import router as main_router
-from .login import router as login_router
 from .oauth import router as oauth_router
+from .navigation import router as nav_router
 
 async def resp_headers(response: Response):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -23,5 +23,6 @@ def get_api_router() -> APIRouter:
         dependencies=[Depends(resp_headers)]
     )
     api_router.include_router(main_router)
-    api_router.include_router(login_router)
+    api_router.include_router(oauth_router)
+    api_router.include_router(nav_router)
     return api_router

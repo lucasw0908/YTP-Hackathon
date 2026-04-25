@@ -55,6 +55,7 @@ services:
       DOMAIN_NAME: ${DOMAIN_NAME}
     ports:
       - "80:80"
+      - "8080:80"
       - "443:443"
     depends_on:
       - frontend
