@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 
 class WeatherStatus(BaseModel):
-    WMO_CODE: str
+    WMO_CODE: int
     status: Literal["windy", "sunny", "rainy", "large_rainy", "others"]
 
 

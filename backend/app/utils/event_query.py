@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from tavily import TavilyClient
 from google import genai
 from geopy.geocoders import ArcGIS
-from geopy.location import Location
+import asyncio
 
 from ..config import SettingsDep
 
@@ -26,13 +26,13 @@ class SearchEvent(BaseModel):
     time: str
     venue: str
     address: str
-    location: Location
+    location: SearchLocation
     
 class EventQueryManager:
     def __init__(self, settings: SettingsDep):
         self.gemini_model_name = "gemini-2.5-flash"
         self.tavily_client = TavilyClient(settings.api.TAVILY_APIKEY)
-        self.gemini_client = genai.Client(settings.api.GEMINI_APIKEY)
+        self.gemini_client = genai.Client(api_key=settings.api.GEMINI_APIKEY)
         self.geolocator = ArcGIS(user_agent="taipei_event_bot")
 
     async def get_location_data(self, venue_name: str):
@@ -41,7 +41,7 @@ class EventQueryManager:
             
         try:
             query_target = venue_name if "台北" in venue_name else f"台北市 {venue_name}"
-            location: Optional[Location] = await self.geolocator.geocode(query_target, timeout=10)
+            location = await asyncio.to_thread(self.geolocator.geocode, query_target, timeout=10)
             
             if location is not None:
                 return {

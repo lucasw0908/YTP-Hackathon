@@ -1,5 +1,5 @@
-// src/pages/Landing.tsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BasicSetup from '../components/BasicSetup';
 import HotelSetup from '../components/HotelSetup';
 import PreferenceQuiz from '../components/PreferenceQuiz';
@@ -16,6 +16,7 @@ const STAGES = {
 };
 
 function Landing() {
+    const navigate = useNavigate();
     // 使用 AppStage Enum
     const [currentStage, setCurrentStage] = useState<AppStage>(AppStage.BASIC);
     // 使用 TravelPlanPayload
@@ -41,9 +42,15 @@ function Landing() {
 
     const handleFinalSubmit = async () => {
         setIsSubmitting(true);
-        await submitTravelPlan(globalTravelData);
+        const result = await submitTravelPlan(globalTravelData);
         setIsSubmitting(false);
-        alert("送出成功！LLM 正在產生您的客製化行程！");
+        
+        if (result.success) {
+            alert("送出成功！即將前往導航頁面。");
+            navigate('/nav');
+        } else {
+            alert(result.message);
+        }
     };
 
     return (

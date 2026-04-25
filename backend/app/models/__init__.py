@@ -35,7 +35,7 @@ class DatabaseSessionManager:
             pool_recycle=settings.database.POOL_RECYCLE,
             pool_pre_ping=True
         )
-        self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine)
+        self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine, expire_on_commit=False)
 
     async def close(self):
         if self._engine is None:
@@ -79,3 +79,7 @@ async def get_db_session():
         yield session
         
 SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
+
+from .users import Users
+from .plans import TravelPlan
+from .missions import Mission
