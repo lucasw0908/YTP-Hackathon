@@ -2,6 +2,7 @@ from fastapi import APIRouter, Response, Depends
 
 from .main import router as main_router
 from .login import router as login_router
+from .navigation import router as nav_router
 
 
 async def resp_headers(response: Response):
@@ -24,4 +25,5 @@ def get_api_router() -> APIRouter:
     )
     api_router.include_router(main_router)
     api_router.include_router(login_router)
+    api_router.include_router(nav_router)
     return api_router
