@@ -140,12 +140,12 @@ def get_all_hotels():
     return get_hotels_info("")
 
 def save_hotels_to_json(hotels, settings: Settings):
-    with open(os.path.join(settings.BASEDIR, "data", "hotel.json"), 'w', encoding='utf-8') as file:
+    with open(os.path.join(settings.BASEDIR, "data", "hotels.json"), 'w', encoding='utf-8') as file:
         json.dump(hotels, file, ensure_ascii=False, indent=4)
 
 def load_hotels_from_json(settings: Settings):
     try:
-        with open(os.path.join(settings.BASEDIR, "data", "hotel.json"), 'r', encoding='utf-8') as file:
+        with open(os.path.join(settings.BASEDIR, "data", "hotels.json"), 'r', encoding='utf-8') as file:
             return json.load(file)
     except FileNotFoundError:
         return None
