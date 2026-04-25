@@ -1,14 +1,4 @@
 import type { Route } from '../types/wayPoint';
-
-export async function fetchRoute(
-    _userLat: number, _userLng: number,
-    _destLat: number, _destLng: number,
-): Promise<Route> {
-    // TODO: GET /api/navigation?start_lat=&start_lng=&end_lat=&end_lng=
-    await new Promise(r => setTimeout(r, 600));
-    return MOCK_ROUTE;
-}
-
 export const MOCK_ROUTE: Route =
 {
     "id": "route_generated_01",
@@ -574,4 +564,32 @@ export const MOCK_ROUTE: Route =
             "positioning": "gps"
         }
     ]
+}
+export async function fetchRoute(
+    userLat: number, userLng: number, // 拿掉底線，代表開始使用這些變數
+    destLat: number, destLng: number,
+): Promise<Route> {
+    try {
+        // 1. 組裝 API 網址 (將參數帶入 query string)
+        const url = `/api/navigation?start_lat=${userLat}&start_lng=${userLng}&end_lat=${destLat}&end_lng=${destLng}`;
+
+        // 2. 發送 GET 請求
+        const response = await fetch(url);
+
+        // 3. 檢查 HTTP 狀態碼是否成功 (200-299)
+        if (!response.ok) {
+            throw new Error(`API 請求失敗，狀態碼: ${response.status}`);
+        }
+
+        // 4. 解析 JSON 回傳真實結果
+        const data: Route = await response.json();
+        return data;
+
+    } catch (error) {
+        console.error("無法取得導航路線:", error);
+
+        // 【容錯機制】如果後端 API 還沒寫好或掛掉，暫時回傳原本的 MOCK_ROUTE 讓前端不會壞
+        console.warn("使用假資料 (MOCK_ROUTE) 作為備案");
+        return MOCK_ROUTE;
+    }
 }
