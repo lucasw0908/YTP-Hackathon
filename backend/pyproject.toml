@@ -14,6 +14,7 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.18.4",
     "asyncpg>=0.31.0",
+    "bs4>=0.0.2",
     "fastapi[standard]",
     "geopy>=2.4.1",
     "google-auth-oauthlib>=1.3.1",

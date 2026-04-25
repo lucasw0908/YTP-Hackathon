@@ -1,14 +1,16 @@
-# # requirements:
-# # pip install requests
-# # pip install bs4
-# "data" 的相對路徑還沒修
-
 import os
 import json
+import logging
+
 import requests
+import re
 from bs4 import BeautifulSoup
-import time # 用於設定延遲，避免頻繁請求被鎖 IP
-import re   # 引入正則表達式模組，用來提取字串中的數字
+
+from ..config import SettingsDep
+
+
+log = logging.getLogger(__name__)
+
 
 def get_hotels_info(district):
     base_url = "https://stest.taiwanstay.net.tw/TSA/web_page/"
@@ -32,7 +34,7 @@ def get_hotels_info(district):
     output = []
 
     # --- 內部函數：用來解析單一頁面中的所有旅館卡片 ---
-    def parse_page(page_soup):
+    def parse_page(page_soup: BeautifulSoup):
         page_output = []
         hotel_cards = page_soup.find_all('div', class_='card mb-3 px-0')
         
@@ -70,11 +72,11 @@ def get_hotels_info(district):
 
 
     # --- 第 1 步：發送第一次請求，獲取第 1 頁資料與總頁數/總筆數 ---
-    print(f"正在搜尋 [{district}] 的旅館資訊...")
+    log.debug(f"正在搜尋 [{district}] 的旅館資訊...")
     response = session.post(target_url, data=payload, headers=headers)
     
     if response.status_code != 200:
-        print("請求失敗！")
+        log.debug("請求失敗！")
         return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -88,7 +90,7 @@ def get_hotels_info(district):
         match = re.search(r'共(\d+)筆', span_text)
         if match:
             expected_total_items = int(match.group(1))
-            print(f"網頁顯示總共有：{expected_total_items} 筆資料。")
+            log.debug(f"網頁顯示總共有：{expected_total_items} 筆資料。")
 
     # 尋找總頁數
     max_page = 1
@@ -102,8 +104,8 @@ def get_hotels_info(district):
             if isinstance(last_value, str) and last_value.isdigit():
                 max_page = int(last_value)
             
-    print(f"共分為 {max_page} 頁。")
-    print(f"已完成爬取第 1 / {max_page} 頁...")
+    log.debug(f"共分為 {max_page} 頁。")
+    log.debug(f"已完成爬取第 1 / {max_page} 頁...")
 
     # 處理並儲存第 1 頁的資料
     output.extend(parse_page(soup))
@@ -111,7 +113,7 @@ def get_hotels_info(district):
 
     # --- 第 2 步：透過迴圈抓取第 2 頁到最後一頁 ---
     for page in range(2, max_page + 1):
-        print(f"正在爬取第 {page} / {max_page} 頁...")
+        log.debug(f"正在爬取第 {page} / {max_page} 頁...")
         
         # 更新 Payload 中的頁碼
         payload["PGA01"] = str(page)
@@ -127,23 +129,22 @@ def get_hotels_info(district):
     # 最終驗證比對
     if expected_total_items > 0:
         if len(output) > expected_total_items:
-            print(f"資料筆數核對無誤！(共 {len(output)} 筆)")
+            log.debug(f"資料筆數核對無誤！(共 {len(output)} 筆)")
         else:
-            print(f"⚠️ 警告：爬取的筆數 ({len(output)}) 與網頁顯示的總筆數 ({expected_total_items}) 不符！")
+            log.debug(f"⚠️ 警告：爬取的筆數 ({len(output)}) 與網頁顯示的總筆數 ({expected_total_items}) 不符！")
 
     return output
 
 def get_all_hotels():
     return get_hotels_info("")
 
-def save_hotels_to_json(hotels, directory, filename):
-    os.makedirs(directory, exist_ok=True)
-    with open(os.path.join(directory, filename), 'w', encoding='utf-8') as file:
+def save_hotels_to_json(hotels, settings: SettingsDep):
+    with open(os.path.join(settings.BASEDIR, "data", "hotel.json"), 'w', encoding='utf-8') as file:
         json.dump(hotels, file, ensure_ascii=False, indent=4)
 
-def load_hotels_from_json(directory, filename):
+def load_hotels_from_json(settings: SettingsDep):
     try:
-        with open(os.path.join(directory, filename), 'r', encoding='utf-8') as file:
+        with open(os.path.join(settings.BASEDIR, "data", "hotel.json"), 'r', encoding='utf-8') as file:
             return json.load(file)
     except FileNotFoundError:
         return None
@@ -152,11 +153,11 @@ def load_hotels_from_json(directory, filename):
 def find_hotel(keyword):
     # 嘗試載入旅館資料，如果檔案不存在則給予提示
     
-    hotels = load_hotels_from_json("data", "hotels.json")
+    hotels: list[dict] = load_hotels_from_json()
     if hotels is None:
-        hotels = get_all_hotels();
-        save_hotels_to_json(hotels, "data", "hotels.json")
-        print("找不到 data/hotels.json，已經先執行爬蟲並儲存資料！")
+        hotels = get_all_hotels()
+        save_hotels_to_json(hotels)
+        log.debug("找不到 data/hotels.json，已經先執行爬蟲並儲存資料！")
 
     if hotels is None:
         return None
@@ -186,25 +187,25 @@ def find_hotel(keyword):
     return matched_hotels 
 
 # for debug
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # 測試士林區
     # results = get_hotels_info("士林區")
     
     # results = get_all_hotels()
 
     # if results:
-    #     print(f"\n爬取完成！總共抓到 {len(results)} 筆旅館資料。\n")
+    #     log.debug(f"\n爬取完成！總共抓到 {len(results)} 筆旅館資料。\n")
     #     # 印出最後一筆資料確認是否成功爬到最後一頁
-    #     print("最後一筆資料範例：")
-    #     print(results[-1])
+    #     log.debug("最後一筆資料範例：")
+    #     log.debug(results[-1])
 
     # save_hotels_to_json(results, "data", "hotels.json")
     # finded_hotels = find_hotel("士林區")
     # if finded_hotels is None:
-    #     print("找不到符合關鍵字的旅館資料！")
+    #     log.debug("找不到符合關鍵字的旅館資料！")
     # if isinstance(finded_hotels, list):
-    #     print(f"找到 {len(finded_hotels)} 筆符合關鍵字的旅館資料！")
-    #     print(finded_hotels)
+    #     log.debug(f"找到 {len(finded_hotels)} 筆符合關鍵字的旅館資料！")
+    #     log.debug(finded_hotels)
     # else:
-    #     print(f"找到符合關鍵字的旅館資料！")
-    #     print(finded_hotels)
+    #     log.debug(f"找到符合關鍵字的旅館資料！")
+    #     log.debug(finded_hotels)
