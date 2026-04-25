@@ -84,13 +84,13 @@ jobs:
 
       - name: Health check for frontend
         run: |
-          curl -fsS http://localhost/ > /dev/null \
+          curl -fs http://localhost/ > /dev/null \
             && echo "[OK] http://localhost/" \
             || echo "[FAIL] http://localhost/
       
       - name: Health check for backend     
         run: |
-          curl -fsS http://localhost/api/ > /dev/null \
+          curl -fs http://localhost/api/ > /dev/null \
             && echo "[OK] http://localhost/api/" \
             || echo "[FAIL] http://localhost/api/"
 
