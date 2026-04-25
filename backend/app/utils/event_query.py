@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 class SearchRequest(BaseModel):
     query: str
-    
+
 class SearchLocation(BaseModel):
     lat: float
     lng: float

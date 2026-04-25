@@ -152,6 +152,7 @@ class Settings(BaseSettings):
     database: DatabaseSettings = DatabaseSettings()
     security: SecuritySettings = SecuritySettings()
     logging: LoggingSettings = LoggingSettings()
+    oauth: OAuthSettings = OAuthSettings()
     smtp: SMTPSettings = SMTPSettings()
     defaults: DefaultSettings = DefaultSettings()
     api: APISettings = APISettings()

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 log = logging.getLogger(__name__)
 
+
 class WeatherStatus(BaseModel):
     WMO_CODE: str
     status: Literal["windy", "sunny", "rainy", "large_rainy", "others"]
