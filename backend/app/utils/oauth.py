@@ -2,37 +2,32 @@ import logging
 import os
 from typing import Optional, override
 
-from pydantic import BaseModel
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import Request, HTTPException
 from google.auth.transport import requests
 from google_auth_oauthlib.flow import Flow
 from google.auth.exceptions import GoogleAuthError
 from google.oauth2 import id_token
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
+from sqlalchemy.ext.asyncio import AsyncSession
 from zenora import APIClient, APIError
 
-from ..config import SettingsDep
-from ..models import SessionDep
+from ..config import Settings
 from ..models.users import Users, get_user
 
 
 log = logging.getLogger(__name__)
-router = APIRouter(
-    prefix="/oauth",
-    tags=["oauth"]
-)
 
 
-class OAuthManager(BaseModel):
+class OAuthManager(object):
     @override
-    def __init__(self, settings: SettingsDep): ...
+    def __init__(self, settings: Settings): ...
 
     @override
-    async def auth(self, request: Request, session: SessionDep) -> Optional[Users]: ...
+    async def auth(self, request: Request, session: AsyncSession) -> Optional[Users]: ...
 
 
 class DiscordOAuthManager(OAuthManager):
-    def __init__(self, settings: SettingsDep):
+    def __init__(self, settings: Settings):
         self.discord_client = APIClient(
             settings.oauth.DISCORD_TOKEN, 
             client_secret=settings.oauth.DISCORD_CLIENT_SECRET, 
@@ -40,7 +35,7 @@ class DiscordOAuthManager(OAuthManager):
         )
         self.redirect_uri = settings.oauth.REDIRECT_URI + "oauth/discord/callback"
     
-    async def auth(self, request: Request, session: SessionDep) -> Optional[Users]:
+    async def auth(self, request: Request, session: AsyncSession) -> Optional[Users]:
         log.debug(request.items())
         if "code" not in request.query_params.keys():
             log.warning("No code provided in request arguments")
@@ -74,7 +69,7 @@ class DiscordOAuthManager(OAuthManager):
     
     
 class GoogleOAuthManager(OAuthManager):
-    def __init__(self, settings: SettingsDep):
+    def __init__(self, settings: Settings):
         self.google_client_id = settings.oauth.GOOGLE_CLIENT_ID
         self.google_flow = Flow.from_client_config(
             settings.oauth.GOOGLE_CONFIG,
@@ -83,7 +78,7 @@ class GoogleOAuthManager(OAuthManager):
         )
         self.redirect_uri = settings.oauth.REDIRECT_URI
         
-    async def auth(self, request: Request, session: SessionDep) -> Optional[Users]:
+    async def auth(self, request: Request, session: AsyncSession) -> Optional[Users]:
         if not self.redirect_uri.startswith("https"):
             log.warning("Insecure transport for OAuth2, only for development use.")
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
