@@ -8,34 +8,62 @@ const MOCK_HOTEL_DB = [
 ];
 
 /**
- * 模擬：關鍵字模糊搜尋飯店 (Autocomplete)
+ * 關鍵字模糊搜尋飯店 (Autocomplete - 串接後端 API)
  */
 export const searchHotelsByKeyword = async (keyword: string): Promise<string[]> => {
-    console.log(`[API] 正在搜尋包含 [${keyword}] 的住宿...`);
+    console.log(`[API] 正在串接後端搜尋包含 [${keyword}] 的住宿...`);
     
-    // 模擬網路延遲，讓 UX 感覺更真實
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
     if (!keyword.trim()) return [];
 
-    return MOCK_HOTEL_DB.filter(name => 
-        name.toLowerCase().includes(keyword.toLowerCase())
-    );
+    try {
+        const response = await fetch(`/api/hotel?keyword=${encodeURIComponent(keyword)}`);
+        if (!response.ok) {
+            throw new Error('Failed to search hotels');
+        }
+        
+        const data = await response.json();
+        
+        // 後端返回的是物件陣列，我們只需要名稱字串陣列
+        if (Array.isArray(data)) {
+            return data.map((hotel: any) => hotel.name).filter(Boolean);
+        }
+        
+        return [];
+    } catch (error) {
+        console.error('searchHotelsByKeyword error:', error);
+        return [];
+    }
 };
 
 /**
- * 模擬：取得區域推薦飯店列表
+ * 取得區域推薦飯店列表 (串接後端 API)
  */
 export const fetchRecommendedHotels = async (area: string): Promise<HotelRecommendation[]> => {
-    console.log(`[API] 正在取得 [${area}] 的推薦飯店...`);
+    console.log(`[API] 正在串接後端取得 [${area}] 的推薦飯店...`);
     
-    // 模擬網路延遲
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    return [
-        { id: 1, name: `${area} 豪華大飯店`, priceLevel: "$$$" },
-        { id: 2, name: `${area} 文青設計旅店`, priceLevel: "$$" },
-        { id: 3, name: `${area} 捷運共構商旅`, priceLevel: "$$" },
-        { id: 4, name: `${area} 小資青年旅館`, priceLevel: "$" },
-    ];
+    try {
+        const response = await fetch(`/api/hotel?keyword=${encodeURIComponent(area)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch hotels');
+        }
+        
+        const data = await response.json();
+        
+        // 將後端資料格式 (name, address, tags...) 轉換成前端格式 (id, name, priceLevel)
+        if (Array.isArray(data)) {
+            return data.map((hotel: any, index: number) => ({
+                id: index, 
+                name: hotel.name || '未知名飯店',
+                address: hotel.address,
+                officialWebsite: hotel.official_website,
+                tags: hotel.tags,
+                priceLevel: hotel.tags?.some((t: string) => t.includes('豪華')) ? '$$$' : '$$'
+            }));
+        }
+        
+        return [];
+    } catch (error) {
+        console.error('fetchRecommendedHotels error:', error);
+        return [];
+    }
 };

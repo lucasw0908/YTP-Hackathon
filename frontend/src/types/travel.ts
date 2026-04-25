@@ -44,6 +44,9 @@ export interface HotelRecommendation {
   name: string;
   /** 預算等級 (例: '$', '$$', '$$$') */
   priceLevel: string;
+  address?: string;
+  officialWebsite?: string;
+  tags?: string[];
 }
 
 // 3. 模組 C：偏好問卷作答結果
