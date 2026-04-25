@@ -83,16 +83,10 @@ jobs:
           done
 
       - name: Health check for frontend
-        run: |
-          curl -fs http://localhost/ > /dev/null \
-            && echo "[OK] http://localhost/" \
-            || echo "[FAIL] http://localhost/
+        run: curl -i http://localhost/ > /dev/null
       
       - name: Health check for backend     
-        run: |
-          curl -fs http://localhost/api/ > /dev/null \
-            && echo "[OK] http://localhost/api/" \
-            || echo "[FAIL] http://localhost/api/"
+        run: curl -i http://localhost/api/ > /dev/null
 
       - name: Show logs on failure
         if: failure()
