@@ -157,7 +157,7 @@ export default function NavController({ route }: NavControllerProps) {
             )}
 
             {/* 底部狀態列 */}
-            <div className="absolute bottom-4 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
+            <div className="absolute bottom-14 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
                 <div className="flex items-center gap-3">
                     <span className="text-2xl shrink-0">{MODE_EMOJI[nav.activeMode]}</span>
                     <div className="flex-1 min-w-0">

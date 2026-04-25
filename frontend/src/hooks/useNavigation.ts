@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocation } from '../contexts/LocationContext';
 import type { Route, Waypoint, TransportMode, PositioningMode } from '../types/wayPoint';
 
-const GPS_ARRIVAL_RADIUS_M = 30;
+const GPS_ARRIVAL_RADIUS_M = 400;
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371000;
@@ -58,13 +58,8 @@ export function useNavigation(route: Route | null): NavStatus {
         }
     }, []);
 
-    useEffect(() => {
-        alert("!!")
-    }, [gps])
-
     // GPS 距離檢測
     useEffect(() => {
-        console.log(gps, targetWaypoint)
         if (!gps || !targetWaypoint || isComplete) return;
         if (targetWaypoint.positioning !== 'gps') return;
 
