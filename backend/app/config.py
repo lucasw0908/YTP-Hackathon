@@ -130,6 +130,11 @@ class DefaultSettings(BaseModel):
     THEME: Literal["light", "dark"] = "light"
     DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
     LOCALE: str = "en"
+    
+    
+class APISettings(BaseModel):
+    TAVILY_APIKEY: str = EnvManager.get("TAVILY_APIKEY")
+    GEMINI_APIKEY: str = EnvManager.get("GEMINI_APIKEY")
 
 
 class SocialLinks(BaseModel):
@@ -149,6 +154,7 @@ class Settings(BaseSettings):
     logging: LoggingSettings = LoggingSettings()
     smtp: SMTPSettings = SMTPSettings()
     defaults: DefaultSettings = DefaultSettings()
+    api: APISettings = APISettings()
     social_links: SocialLinks = SocialLinks()
     
     model_config = SettingsConfigDict(
