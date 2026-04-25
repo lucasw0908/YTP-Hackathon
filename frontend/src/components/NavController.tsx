@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Map, Train } from 'lucide-react';
 import NavigationMap from './NavigationMap';
-import MrtMap from './MrtMap';
+import MrtMap, { type RouteStationEntry } from './MrtMap';
 import { useNavigation, type NavPrompt } from '../hooks/useNavigation';
 import { useLocation as useLocationCtx } from '../contexts/LocationContext';
 import type { Route, TransportMode, Waypoint } from '../types/wayPoint';
+import stationsRaw from '../assets/stations.json';
+
+type StationRecord = { id: string; name: string; x: number; y: number };
+const stationsData = stationsRaw as StationRecord[];
 
 const LINE_NAMES: Record<string, string> = {
     BL: '板南線', BR: '文湖線', G: '松山新店線',
@@ -72,42 +76,49 @@ export default function NavController({ route }: NavControllerProps) {
     const nav = useNavigation(route);
     const { currentStationCode, gps } = useLocationCtx();
 
-    // 地圖狀態：由使用者「確認」動作驅動，不再自動切換
-    // 初始值根據儲存進度：若目前 waypoint 是 beacon 模式，則直接開 MRT 圖
     const [showMrt, setShowMrt] = useState(() => nav.activePositioning === 'beacon');
 
-    // 4 秒後自動消失的橫幅指示
     useEffect(() => {
         if (!nav.pendingInstruction) return;
         const t = setTimeout(nav.clearInstruction, 4000);
         return () => clearTimeout(t);
     }, [nav.pendingInstruction]);
 
-    // 使用者點擊「確認繼續」：依節點類型決定是否切換地圖
     function handleConfirm() {
         const type = nav.pendingPrompt?.promptType;
         if (type === 'mrt_entry') setShowMrt(true);
         else if (type === 'mrt_exit') setShowMrt(false);
-        // transfer / transition 不切換地圖
         nav.confirmAdvance();
     }
 
-    // 捷運路線站碼（去重，保持順序）
-    const metroRouteStationCodes = useMemo<string[]>(() => {
-        const seen = new Set<string>();
-        const result: string[] = [];
+    // 依站名去重（同物理站不同線別 code 只保留第一次出現）
+    // 同時納入有 stationCode 的 transition（捷運出口站）
+    const metroRouteStations = useMemo<RouteStationEntry[]>(() => {
+        const seenNames = new Set<string>();
+        const result: RouteStationEntry[] = [];
         for (const wp of route.waypoints) {
-            if (wp.mode === 'metro') {
-                const code = (wp as any).stationCode as string | undefined;
-                if (code && !seen.has(code)) { seen.add(code); result.push(code); }
-            }
+            const isMetroSeg = wp.mode === 'metro';
+            const isMetroExit = wp.role === 'transition' && !!(wp as any).stationCode;
+            if (!isMetroSeg && !isMetroExit) continue;
+            const code = (wp as any).stationCode as string | undefined;
+            const name = (wp as any).station as string | undefined;
+            const key = name ?? code;
+            if (!key || seenNames.has(key)) continue;
+            seenNames.add(key);
+            if (code) result.push({ code, name });
         }
         return result;
     }, [route]);
 
-    const activeMetroIndex = currentStationCode
-        ? metroRouteStationCodes.indexOf(currentStationCode)
-        : -1;
+    // 直接比對 code，找不到時用 stations.json 名稱做跨線 fallback
+    const activeMetroIndex = useMemo(() => {
+        if (!currentStationCode) return -1;
+        const directIdx = metroRouteStations.findIndex(s => s.code === currentStationCode);
+        if (directIdx !== -1) return directIdx;
+        const stationName = stationsData.find(s => s.id === currentStationCode)?.name;
+        if (!stationName) return -1;
+        return metroRouteStations.findIndex(s => s.name === stationName);
+    }, [currentStationCode, metroRouteStations]);
 
     const nextActionText = useMemo(
         () => computeNextAction(route, nav.currentIndex, nav.activeMode, nav.isComplete),
@@ -127,12 +138,12 @@ export default function NavController({ route }: NavControllerProps) {
             <div className={`absolute inset-0 transition-opacity duration-300 ${showMrt ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <MrtMap
                     hideHeader
-                    routeStationCodes={metroRouteStationCodes}
+                    routeStations={metroRouteStations}
                     activeRouteIndex={activeMetroIndex}
                 />
             </div>
 
-            {/* 地圖切換按鈕（手動覆蓋） */}
+            {/* 地圖切換按鈕 */}
             <div className="absolute top-4 right-4 z-1000 flex bg-white rounded-full shadow-lg p-1 gap-1">
                 <button
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${!showMrt ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}

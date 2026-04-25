@@ -17,11 +17,17 @@ export interface Station {
 
 const stationsData = stationsRaw as Station[];
 
+export interface RouteStationEntry {
+  code: string;
+  name?: string;
+}
+
 interface MrtMapProps {
   selectedStation?: Station | null;
   onStationSelect?: (station: Station) => void;
   hideHeader?: boolean;
-  routeStationCodes?: string[];
+  /** 路線站點列表，優先以 code 查找，找不到時 fallback 用 name 查找（不同線別同站名） */
+  routeStations?: RouteStationEntry[];
   activeRouteIndex?: number;
 }
 
@@ -29,7 +35,7 @@ export default function MrtMap({
   selectedStation = null,
   onStationSelect,
   hideHeader = false,
-  routeStationCodes,
+  routeStations: routeStationsProp,
   activeRouteIndex = -1,
 }: MrtMapProps) {
   const { currentStationCode } = useLocation();
@@ -39,16 +45,17 @@ export default function MrtMap({
     return stationsData.find((s) => s.id === currentStationCode) || null;
   }, [currentStationCode]);
 
-  const routeStations = useMemo(() => {
-    if (!routeStationCodes) return [];
-    return routeStationCodes
-      .map((code, idx) => ({
-        station: stationsData.find(s => s.id === code) ?? null,
-        code,
-        idx,
-      }))
-      .filter(e => e.station !== null) as { station: Station; code: string; idx: number }[];
-  }, [routeStationCodes]);
+  const resolvedRouteStations = useMemo(() => {
+    if (!routeStationsProp) return [];
+    return routeStationsProp.map((entry, idx) => {
+      // 優先 ID 精確比對，找不到時 fallback 名稱比對（同物理站、不同線別 code 的情況）
+      const station =
+        stationsData.find(s => s.id === entry.code) ??
+        (entry.name ? stationsData.find(s => s.name === entry.name) : undefined) ??
+        null;
+      return { station, code: entry.code, name: entry.name, idx };
+    }).filter(e => e.station !== null) as { station: Station; code: string; name?: string; idx: number }[];
+  }, [routeStationsProp]);
 
   const mapAreaTop = hideHeader ? 0 : 76;
 
@@ -106,7 +113,7 @@ export default function MrtMap({
               ))}
 
               {/* 路線站點高亮徽章 */}
-              {routeStations.map(({ station, idx }) => {
+              {resolvedRouteStations.map(({ station, idx }) => {
                 const isPast = activeRouteIndex >= 0 && idx < activeRouteIndex;
                 const isActive = activeRouteIndex >= 0 && idx === activeRouteIndex;
                 const bg = isPast ? '#9ca3af' : isActive ? '#3b82f6' : '#f97316';

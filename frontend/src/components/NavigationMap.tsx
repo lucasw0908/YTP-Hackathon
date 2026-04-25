@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -25,18 +25,32 @@ const userIcon = L.divIcon({
     iconAnchor: [8, 8],
 });
 
-const makeRoleIcon = (emoji: string, color: string) =>
+const makeRoleIcon = (emoji: string, color: string, size = 28) =>
     L.divIcon({
         className: '',
-        html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:14px;">${emoji}</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.5)}px;">${emoji}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
     });
 
-const ROLE_ICONS = {
-    transition: makeRoleIcon('🔄', '#f97316'),
-    transfer:   makeRoleIcon('🚇', '#8b5cf6'),
+type RoleKey = 'transition' | 'transfer' | 'destination';
+
+const ROLE_ICONS_FUTURE: Record<RoleKey, L.DivIcon> = {
+    transition:  makeRoleIcon('🔄', '#f97316'),
+    transfer:    makeRoleIcon('🚇', '#8b5cf6'),
     destination: makeRoleIcon('🎯', '#ef4444'),
+};
+
+const ROLE_ICONS_ACTIVE: Record<RoleKey, L.DivIcon> = {
+    transition:  makeRoleIcon('🔄', '#3b82f6', 34),
+    transfer:    makeRoleIcon('🚇', '#3b82f6', 34),
+    destination: makeRoleIcon('🎯', '#ef4444', 34),
+};
+
+const ROLE_ICONS_PAST: Record<RoleKey, L.DivIcon> = {
+    transition:  makeRoleIcon('✓', '#9ca3af', 20),
+    transfer:    makeRoleIcon('✓', '#9ca3af', 20),
+    destination: makeRoleIcon('✓', '#6b7280', 20),
 };
 
 function MapAutoCenter({ gps }: { gps: { lat: number; lng: number } | null }) {
@@ -50,11 +64,11 @@ function MapAutoCenter({ gps }: { gps: { lat: number; lng: number } | null }) {
 interface Segment {
     mode: TransportMode;
     coords: [number, number][];
+    past: boolean;
 }
 
 interface NavigationMapProps {
     route: Route;
-    /** 目前進行到第幾個 waypoint，只顯示剩餘路段 */
     currentIndex?: number;
 }
 
@@ -62,32 +76,30 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
     const { gps } = useLocation();
     const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [25.0478, 121.5170];
 
-    // 只顯示從 currentIndex 開始的剩餘路段
-    const remainingWaypoints = useMemo(
-        () => route.waypoints.slice(currentIndex),
-        [route, currentIndex],
-    );
-
+    // Segments split by mode AND past/future — color stays, only opacity changes
     const segments = useMemo<Segment[]>(() => {
-        if (!remainingWaypoints.length) return [];
+        if (!route.waypoints.length) return [];
         const result: Segment[] = [];
         let cur: Segment | null = null;
-        for (const wp of remainingWaypoints) {
+        route.waypoints.forEach((wp, idx) => {
             const ll: [number, number] = [wp.coord[1], wp.coord[0]];
-            if (!cur || cur.mode !== wp.mode) {
-                cur = { mode: wp.mode, coords: [ll] };
+            const past = idx < currentIndex;
+            if (!cur || cur.mode !== wp.mode || cur.past !== past) {
+                cur = { mode: wp.mode, coords: [ll], past };
                 result.push(cur);
             } else {
                 cur.coords.push(ll);
             }
-        }
+        });
         return result;
-    }, [remainingWaypoints]);
+    }, [route, currentIndex]);
 
-    // 只顯示「下一個」關鍵節點（第一個 role !== 'waypoint' 的點）
-    const nextKeyPoint = useMemo(
-        () => remainingWaypoints.find(wp => wp.role !== 'waypoint') ?? null,
-        [remainingWaypoints],
+    // All key waypoints — static list, currentIndex only affects icon state
+    const keyWaypoints = useMemo(() =>
+        route.waypoints
+            .map((wp, idx) => ({ wp, idx }))
+            .filter(({ wp }) => wp.role !== 'waypoint'),
+        [route],
     );
 
     return (
@@ -118,38 +130,41 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
                     attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
                     url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 />
-
                 <MapAutoCenter gps={gps} />
 
+                {/* 完整路線：已過路段保持原色但降低透明度 */}
                 {segments.map((seg, i) => (
                     <Polyline
                         key={i}
                         positions={seg.coords}
                         color={MODE_COLORS[seg.mode]}
                         weight={seg.mode === 'metro' ? 5 : 6}
-                        opacity={0.85}
+                        opacity={seg.past ? 0.3 : 0.85}
                         dashArray={seg.mode === 'metro' ? '10, 8' : undefined}
                     />
                 ))}
 
-                {/* 只顯示下一個關鍵節點 */}
-                {nextKeyPoint && (() => {
-                    const pos: [number, number] = [nextKeyPoint.coord[1], nextKeyPoint.coord[0]];
-                    const icon = nextKeyPoint.role === 'destination'
-                        ? ROLE_ICONS.destination
-                        : nextKeyPoint.role === 'transfer'
-                            ? ROLE_ICONS.transfer
-                            : ROLE_ICONS.transition;
+                {/* 所有關鍵節點：已過/當前/未來 三種圖示狀態 */}
+                {keyWaypoints.map(({ wp, idx }) => {
+                    const pos: [number, number] = [wp.coord[1], wp.coord[0]];
+                    const roleKey: RoleKey =
+                        wp.role === 'destination' ? 'destination' :
+                        wp.role === 'transfer'    ? 'transfer'    : 'transition';
+                    const isPast   = idx < currentIndex;
+                    const isActive = idx === currentIndex;
+                    const icon = isPast   ? ROLE_ICONS_PAST[roleKey]
+                               : isActive ? ROLE_ICONS_ACTIVE[roleKey]
+                               :            ROLE_ICONS_FUTURE[roleKey];
                     return (
-                        <Marker position={pos} icon={icon}>
-                            {(nextKeyPoint as any).instruction && (
+                        <Marker key={idx} position={pos} icon={icon}>
+                            {(wp as any).instruction && (
                                 <Popup>
-                                    <span className="text-sm font-medium">{(nextKeyPoint as any).instruction}</span>
+                                    <span className="text-sm font-medium">{(wp as any).instruction}</span>
                                 </Popup>
                             )}
                         </Marker>
                     );
-                })()}
+                })}
 
                 {gps && (
                     <Marker position={[gps.lat, gps.lng]} icon={userIcon} zIndexOffset={1000} />

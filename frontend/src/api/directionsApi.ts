@@ -602,6 +602,7 @@ export async function fetchRoute(
         // 4. 解析 JSON 回傳真實結果
         const data: Route = await response.json();
         setCachedRoute(data);
+        console.log(data)
         return data;
 
     } catch (error) {
