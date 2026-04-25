@@ -1,29 +1,27 @@
 import logging
 import json
 import os
+import asyncio
+import httpx
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 
 from ..models import SessionDep, TravelPlan, Mission
 from ..config import SettingsDep
 from ..utils.weather_query import get_weather
 from ..utils.event_query import EventQueryManager, SearchRequest
 from ..utils.metro_lookup import MetroLookup
-from pydantic import BaseModel, Field
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/mission")
 
-# LLM Models for Mission Generation (copied from apiresearch/mission.py)
-class TaskLocation(BaseModel):
-    lat: float
-    lng: float
-
+# 1. 修改 Pydantic 模型，移除經緯度欄位
 class GameTask(BaseModel):
     task_id: int
     task_name: str
@@ -31,18 +29,39 @@ class GameTask(BaseModel):
     description: str
     type: str
     estimated_duration_mins: int
-    location: TaskLocation
 
 class MissionResponse(BaseModel):
     tasks: List[GameTask]
 
+# 2. 實作非同步地理編碼函數 (若查無結果回傳 None)
+async def geocode_location(location_name: str, default_city: str = "台北") -> Optional[Tuple[float, float]]:
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": f"{default_city} {location_name}",
+        "format": "json",
+        "limit": 1
+    }
+    headers = {
+        "User-Agent": "MissionGeneratorApp/1.0"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, headers=headers, timeout=5.0)
+            if response.status_code == 200:
+                data = response.json()
+                if data:
+                    return float(data[0]["lat"]), float(data[0]["lon"])
+        except Exception as e:
+            log.error(f"Geocoding error for {location_name}: {e}")
+            
+    return None
+
 @router.get("/newmission")
 async def generate_new_missions(session: SessionDep, settings: SettingsDep, user_id: Optional[int] = None):
     """
-    Generate 10 missions for the user based on preferences, weather, and events.
+    Generate missions for the user based on preferences, weather, and events.
     """
-    # 1. Get User Preferences from TravelPlan
-    # For Hackathon, if user_id is None, just get the latest plan
     if user_id:
         stmt = select(TravelPlan).where(TravelPlan.user_id == user_id).order_by(TravelPlan.created_at.desc())
     else:
@@ -54,15 +73,11 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
     
     plan_data = plan_record.data
     prefs = plan_data.get("preferences", {})
-    basic = plan_data.get("basic", {})
     
-    # 2. Get Weather Info
-    # Use Taipei as default location if not specified
     lat, lng = 25.0330, 121.5654
     weather_status = get_weather(lat, lng, datetime.now())
     weather_desc = f"天氣狀態: {weather_status.status} (WMO Code: {weather_status.WMO_CODE})"
     
-    # 3. Get Event Info
     static_dir = os.path.join(settings.BASEDIR, "data", "static")
     events_file = os.path.join(static_dir, "events.json")
     events_desc = "今日無重大公開活動"
@@ -76,7 +91,6 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
         except Exception as e:
             log.error(f"Failed to read cached events: {e}")
     else:
-        # Fallback to live search if no cache exists
         try:
             event_manager = EventQueryManager(settings)
             events = await event_manager.get_ai_overview(SearchRequest(query="台北今日活動"), settings)
@@ -84,10 +98,8 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
         except Exception as e:
             log.error(f"Live event search failed: {e}")
     
-    # 4. Generate Missions using Gemini
     client = genai.Client(api_key=settings.api.GEMINI_APIKEY)
     
-    # Map preferences to human readable strings for the prompt
     prompt_context = f"""
     【環境資訊】
     - 當前時間：{datetime.now().strftime("%Y-%m-%d %H:%M")}
@@ -114,8 +126,7 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
     【任務設計規則】
     1. 嚴格設計 10 個任務。
     2. 任務必須包含明確動作與精確地點。
-    3. location_name 必須是確實存在的地標。
-    4. 請直接利用你的知識庫，提供該地點**最精確的經緯度座標** (lat, lng)，填入 location 欄位中。
+    3. location_name 必須是確實存在的知名地標或店家，名稱需完整準確以便於地圖搜尋。
     """
 
     try:
@@ -128,18 +139,26 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
                 temperature=0.7,
             )
         )
-        
         mission_data = MissionResponse.model_validate_json(llm_response.text)
     except Exception as e:
         log.error(f"LLM Mission generation failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate missions via LLM.")
 
-    # 5. Find Nearest MRT Station and Save to DB
+    # 3. 取得經緯度，並過濾失敗的任務
+    tasks = [geocode_location(t.location_name) for t in mission_data.tasks]
+    coordinates = await asyncio.gather(*tasks)
+
     metro = MetroLookup(static_dir)
-    
     new_missions = []
-    for t in mission_data.tasks:
-        nearest = metro.find_nearest_station(t.location.lat, t.location.lng)
+    
+    for t, coords in zip(mission_data.tasks, coordinates):
+        if not coords:
+            # 查詢不到經緯度就放棄此任務
+            log.warning(f"Skipping task '{t.task_name}': Geocoding failed for '{t.location_name}'")
+            continue
+            
+        lat, lng = coords
+        nearest = metro.find_nearest_station(lat, lng)
         
         db_mission = Mission(
             user_id=user_id,
@@ -148,19 +167,22 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
             description=t.description,
             mission_type=t.type,
             estimated_duration_mins=t.estimated_duration_mins,
-            lat=t.location.lat,
-            lng=t.location.lng,
+            lat=lat,
+            lng=lng,
             nearest_station_id=nearest["id"] if nearest else None,
             nearest_station_name=nearest["name"] if nearest else None
         )
         new_missions.append(db_mission)
     
+    if not new_missions:
+         raise HTTPException(status_code=500, detail="Failed to geocode any of the generated missions.")
+
     session.add_all(new_missions)
     await session.commit()
     
     return {
         "success": True,
-        "count": len(new_missions),
+        "count": len(new_missions), # 回傳實際成功建立的任務數量
         "missions": [
             {
                 "id": m.id,
