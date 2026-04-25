@@ -7,6 +7,7 @@ import stationsRaw from '../assets/stations.json';
 import './MrtMap.css';
 import mapImg from "../assets/metro.png";
 import { useLocation } from '../contexts/LocationContext';
+import IconMapper from './IconMapper';
 
 export interface Station {
   id: string;
@@ -67,8 +68,10 @@ export default function MrtMap({
             <Navigation size={24} className="text-blue-500" />
             台北捷運大富翁
           </h1>
-          <div className="text-xs text-gray-500 mt-1">
-            {currentStation ? '📡 真實藍牙定位中' : '⚠️ 等待定位訊號...'}
+          <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+            {currentStation 
+              ? <><IconMapper emoji="📡" size={12} className="text-blue-500" /> 真實藍牙定位中</>
+              : <><IconMapper emoji="⚠️" size={12} className="text-amber-500" /> 等待定位訊號...</>}
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Map, Train } from 'lucide-react';
+import { Map, Train, Play, Target } from 'lucide-react';
 import NavigationMap from './NavigationMap';
 import MrtMap, { type RouteStationEntry } from './MrtMap';
+import IconMapper from './IconMapper';
 import { useNavigation, type NavPrompt } from '../hooks/useNavigation';
 import { useLocation as useLocationCtx } from '../contexts/LocationContext';
 import type { Route, TransportMode, Waypoint } from '../types/wayPoint';
@@ -37,7 +38,7 @@ function activityDesc(mode: TransportMode, wp?: Waypoint | null): string {
 }
 
 function computeNextAction(route: Route, currentIndex: number, mode: TransportMode, isComplete: boolean): string {
-    if (isComplete) return '已抵達目的地 ✅';
+    if (isComplete) return '已抵達目的地';
     const { waypoints } = route;
     const currentWp = waypoints[currentIndex] ?? null;
     const base = activityDesc(mode, currentWp);
@@ -68,15 +69,21 @@ function computeNextAction(route: Route, currentIndex: number, mode: TransportMo
     return base;
 }
 
+import MissionView from './MissionView';
+import type { Task } from '../api/tasksApi';
+
 interface NavControllerProps {
     route: Route;
+    task?: Task;
 }
 
-export default function NavController({ route }: NavControllerProps) {
+export default function NavController({ route, task }: NavControllerProps) {
     const nav = useNavigation(route);
     const { currentStationCode, gps } = useLocationCtx();
 
-    const [showMrt, setShowMrt] = useState(() => nav.activePositioning === 'beacon');
+    const [activeTab, setActiveTab] = useState<'map' | 'mrt' | 'mission'>(() => 
+        nav.activePositioning === 'beacon' ? 'mrt' : 'map'
+    );
 
     useEffect(() => {
         if (!nav.pendingInstruction) return;
@@ -86,8 +93,8 @@ export default function NavController({ route }: NavControllerProps) {
 
     function handleConfirm() {
         const type = nav.pendingPrompt?.promptType;
-        if (type === 'mrt_entry') setShowMrt(true);
-        else if (type === 'mrt_exit') setShowMrt(false);
+        if (type === 'mrt_entry') setActiveTab('mrt');
+        else if (type === 'mrt_exit') setActiveTab('map');
         nav.confirmAdvance();
     }
 
@@ -130,12 +137,12 @@ export default function NavController({ route }: NavControllerProps) {
     return (
         <div className="relative h-full w-full overflow-hidden">
             {/* Leaflet 地圖層 */}
-            <div className={`absolute inset-0 transition-opacity duration-300 ${showMrt ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === 'map' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <NavigationMap route={route} currentIndex={nav.currentIndex} />
             </div>
 
             {/* 捷運圖層 */}
-            <div className={`absolute inset-0 transition-opacity duration-300 ${showMrt ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === 'mrt' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <MrtMap
                     hideHeader
                     routeStations={metroRouteStations}
@@ -143,20 +150,35 @@ export default function NavController({ route }: NavControllerProps) {
                 />
             </div>
 
+            {/* 任務圖層 */}
+            {task && (
+                <div className={`absolute inset-0 transition-opacity duration-300 z-50 ${activeTab === 'mission' ? 'opacity-100 bg-white' : 'opacity-0 pointer-events-none'}`}>
+                    {activeTab === 'mission' && <MissionView task={task} />}
+                </div>
+            )}
+
             {/* 地圖切換按鈕 */}
-            <div className="absolute top-4 right-4 z-1000 flex bg-white rounded-full shadow-lg p-1 gap-1">
+            <div className="absolute top-4 right-4 z-[1000] flex bg-white rounded-full shadow-lg p-1 gap-1">
                 <button
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${!showMrt ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                    onClick={() => setShowMrt(false)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTab === 'map' ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    onClick={() => setActiveTab('map')}
                 >
                     <Map size={13} /> 地圖
                 </button>
                 <button
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${showMrt ? 'bg-purple-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                    onClick={() => setShowMrt(true)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTab === 'mrt' ? 'bg-purple-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    onClick={() => setActiveTab('mrt')}
                 >
                     <Train size={13} /> 捷運
                 </button>
+                {task && (
+                    <button
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTab === 'mission' ? 'bg-amber-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                        onClick={() => setActiveTab('mission')}
+                    >
+                        <Target size={13} /> 任務
+                    </button>
+                )}
             </div>
 
             {/* 一般節點指示橫幅（4 秒自動消失） */}
@@ -172,7 +194,7 @@ export default function NavController({ route }: NavControllerProps) {
                     <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
                         <div className="flex items-center gap-3 mb-4">
                             <span className="text-4xl bg-blue-50 w-12 h-12 flex items-center justify-center rounded-full shrink-0">
-                                {promptUI?.emoji ?? '📍'}
+                                <IconMapper emoji={promptUI?.emoji ?? '📍'} size={32} className="text-blue-600" />
                             </span>
                             <h3 className="text-xl font-black text-gray-800">
                                 {promptUI?.title ?? '確認節點'}
@@ -201,21 +223,24 @@ export default function NavController({ route }: NavControllerProps) {
 
             {/* 抵達提示 */}
             {nav.isComplete && (
-                <div className="absolute top-16 left-4 right-4 z-1000 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center">
-                    🎉 已抵達目的地！
+                <div className="absolute top-16 left-4 right-4 z-1000 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center flex items-center justify-center gap-2">
+                    <IconMapper emoji="🎉" size={18} /> 已抵達目的地！
                 </div>
             )}
 
             {/* 底部狀態列 */}
             <div className="absolute bottom-14 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
                 <div className="flex items-center gap-3">
-                    <span className="text-2xl shrink-0">{MODE_EMOJI[nav.activeMode]}</span>
+                    <IconMapper emoji={MODE_EMOJI[nav.activeMode]} size={24} className="shrink-0 text-blue-500" />
                     <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold text-gray-800 leading-snug truncate">
                             {nextActionText}
                         </div>
                         <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
-                            <span>{nav.activePositioning === 'gps' ? '📡 GPS' : '🔵 Beacon'}</span>
+                            <span className="flex items-center gap-1">
+                                <IconMapper emoji={nav.activePositioning === 'gps' ? '📡' : '🔵'} size={10} />
+                                {nav.activePositioning === 'gps' ? 'GPS' : 'Beacon'}
+                            </span>
                             <span>{nav.currentIndex} / {route.waypoints.length}</span>
                             {import.meta.env.DEV && (
                                 <span className={gps ? 'text-green-500' : 'text-red-400'}>
@@ -227,9 +252,9 @@ export default function NavController({ route }: NavControllerProps) {
                     {import.meta.env.DEV && (
                         <button
                             onClick={nav.advance}
-                            className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded-lg text-gray-600 shrink-0"
+                            className="text-xs bg-gray-100 hover:bg-gray-200 p-2 rounded-lg text-gray-600 shrink-0"
                         >
-                            ▶
+                            <Play size={12} fill="currentColor" />
                         </button>
                     )}
                 </div>

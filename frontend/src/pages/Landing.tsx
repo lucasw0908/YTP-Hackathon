@@ -7,6 +7,8 @@ import { submitTravelPlan } from '../api/planApi';
 import { AppStage, TravelPlanPayload, BasicTravelData, AccommodationData, PreferenceAnswers } from '../types';
 
 
+import IconMapper from '../components/IconMapper';
+
 // 流程狀態列舉
 const STAGES = {
     BASIC: 'BASIC',
@@ -69,8 +71,8 @@ function Landing() {
                 {/* 最終 Summary 模組 (可獨立抽離，此處直接撰寫) */}
                 {currentStage === STAGES.SUMMARY && (
                     <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-md">
-                        <h2 className="text-2xl font-bold mb-4 text-green-600 flex items-center">
-                            🎉 偏好收集完成！
+                        <h2 className="text-2xl font-bold mb-4 text-green-600 flex items-center gap-2">
+                            <IconMapper emoji="🎉" size={24} /> 偏好收集完成！
                         </h2>
                         <p className="mb-4 text-gray-600">以下是即將發送給 LLM 進行運算的 JSON 資料結構：</p>
 

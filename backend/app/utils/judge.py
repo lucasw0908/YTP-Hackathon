@@ -27,6 +27,7 @@ async def judge_mission(mission_description: str, settings: SettingsDep, image_b
     )
     prompt = f"""
     這是一個旅行挑戰任務，使用者會根據任務內容拍攝相關的照片。
+    如果你無法判斷他的位置，請視為他是正確的。
     你負責判斷圖片是否符合任務說明。
     ，並嚴格按照 JSON 格式回傳。 
     is_success: 是否符合任務說明(True/False)

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Clock, ChevronUp, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
 import NavController from '../components/NavController';
+import IconMapper from '../components/IconMapper';
 import { fetchRoute } from '../api/directionsApi';
 import { getTaskById, Task, TYPE_COLORS, TYPE_EMOJI } from '../api/tasksApi';
 import { useLocation as useGPS } from '../contexts/LocationContext';
@@ -17,7 +18,6 @@ export default function TaskPage() {
 
     const [route, setRoute] = useState<Route | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
-    const [showComplete, setShowComplete] = useState(false);
 
     useEffect(() => {
         if (!task) return;
@@ -57,11 +57,11 @@ export default function TaskPage() {
                 {/* 導航地圖（全螢幕） */}
                 {route ? (
                     <div className=' w-full h-full grow'>
-                        <NavController route={route} />
+                        <NavController route={route} task={task} />
                     </div>
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center bg-gray-100 gap-3">
-                        <div className="text-4xl animate-pulse">🗺️</div>
+                        <IconMapper emoji="🗺️" size={48} className="animate-pulse text-gray-400" />
                         <p className="text-sm text-gray-500">正在規劃路線...</p>
                     </div>
                 )}
@@ -74,7 +74,7 @@ export default function TaskPage() {
                         onClick={() => setSheetOpen(o => !o)}
                     >
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-lg shrink-0">{TYPE_EMOJI[task.type]}</span>
+                            <IconMapper emoji={TYPE_EMOJI[task.type]} size={20} className="shrink-0" />
                             <span className="text-sm font-bold text-gray-800 truncate">{task.location_name}</span>
                         </div>
                         {sheetOpen
@@ -96,47 +96,16 @@ export default function TaskPage() {
                             </p>
                             <div className="flex gap-3 pt-1">
                                 <button
-                                    className="flex-1 bg-green-500 active:bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm shadow-md shadow-green-200"
-                                    onClick={() => setShowComplete(true)}
-                                >
-                                    <CheckCircle size={16} /> 完成任務
-                                </button>
-                                <button
                                     className="flex-1 bg-gray-100 active:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
                                     onClick={() => navigate('/map')}
                                 >
-                                    <XCircle size={16} /> 放棄
+                                    <XCircle size={16} /> 返回地圖
                                 </button>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
-
-            {/* 完成任務 Modal */}
-            {showComplete && (
-                <div className="absolute inset-0 z-[2000] bg-black/50 flex items-end">
-                    <div className="w-full bg-white rounded-t-2xl p-6 space-y-4">
-                        <div className="text-center">
-                            <div className="text-5xl mb-2">🎉</div>
-                            <h2 className="text-xl font-bold text-gray-900">任務完成！</h2>
-                            <p className="text-sm text-gray-500 mt-1">{task.location_name}</p>
-                        </div>
-                        <p className="text-xs text-gray-400 text-center">
-                            拍一張照片作為任務完成的證明
-                        </p>
-                        <button className="w-full bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm">
-                            📷 上傳照片驗證
-                        </button>
-                        <button
-                            className="w-full text-gray-400 py-2 text-sm"
-                            onClick={() => navigate('/map')}
-                        >
-                            跳過，返回地圖
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

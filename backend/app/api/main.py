@@ -19,11 +19,11 @@ async def hotel(keyword: str, settings: SettingsDep):
     return find_hotel(keyword, settings)
 
 
-@router.get("/judge")
+@router.post("/judge")
 async def judge(mission_description: str, settings: SettingsDep, file: UploadFile = File(...)):
     
     if file.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(status_code=400, detail="only support JPG or PNG")
     
     content = await file.read()
-    return judge_mission(mission_description, settings, content, file.content_type)
+    return await judge_mission(mission_description, settings, content, file.content_type)

@@ -25,10 +25,17 @@ const userIcon = L.divIcon({
     iconAnchor: [8, 8],
 });
 
-const makeRoleIcon = (emoji: string, color: string, size = 28) =>
+const ICON_SVG = {
+    transition:  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 8 4 4-4 4"/><path d="M2 12h20"/><path d="m6 16-4-4 4-4"/></svg>`,
+    transfer:    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15h20"/><path d="M7 15l3-3 1-1"/><path d="M11 11l1-1 3-3"/><path d="M3 15v-2a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>`, 
+    destination: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    check:       `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
+};
+
+const makeRoleIcon = (svg: string, color: string, size = 28) =>
     L.divIcon({
         className: '',
-        html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size * 0.5)}px;">${emoji}</div>`,
+        html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;padding:${size * 0.15}px;">${svg}</div>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
     });
@@ -36,21 +43,21 @@ const makeRoleIcon = (emoji: string, color: string, size = 28) =>
 type RoleKey = 'transition' | 'transfer' | 'destination';
 
 const ROLE_ICONS_FUTURE: Record<RoleKey, L.DivIcon> = {
-    transition:  makeRoleIcon('🔄', '#f97316'),
-    transfer:    makeRoleIcon('🚇', '#8b5cf6'),
-    destination: makeRoleIcon('🎯', '#ef4444'),
+    transition:  makeRoleIcon(ICON_SVG.transition, '#f97316'),
+    transfer:    makeRoleIcon(ICON_SVG.transfer, '#8b5cf6'),
+    destination: makeRoleIcon(ICON_SVG.destination, '#ef4444'),
 };
 
 const ROLE_ICONS_ACTIVE: Record<RoleKey, L.DivIcon> = {
-    transition:  makeRoleIcon('🔄', '#3b82f6', 34),
-    transfer:    makeRoleIcon('🚇', '#3b82f6', 34),
-    destination: makeRoleIcon('🎯', '#ef4444', 34),
+    transition:  makeRoleIcon(ICON_SVG.transition, '#3b82f6', 34),
+    transfer:    makeRoleIcon(ICON_SVG.transfer, '#3b82f6', 34),
+    destination: makeRoleIcon(ICON_SVG.destination, '#ef4444', 34),
 };
 
 const ROLE_ICONS_PAST: Record<RoleKey, L.DivIcon> = {
-    transition:  makeRoleIcon('✓', '#9ca3af', 20),
-    transfer:    makeRoleIcon('✓', '#9ca3af', 20),
-    destination: makeRoleIcon('✓', '#6b7280', 20),
+    transition:  makeRoleIcon(ICON_SVG.check, '#9ca3af', 20),
+    transfer:    makeRoleIcon(ICON_SVG.check, '#9ca3af', 20),
+    destination: makeRoleIcon(ICON_SVG.check, '#6b7280', 20),
 };
 
 function MapAutoCenter({ gps }: { gps: { lat: number; lng: number } | null }) {
