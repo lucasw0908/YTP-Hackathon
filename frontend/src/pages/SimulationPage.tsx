@@ -171,7 +171,6 @@ export default function SimulationPage() {
                         localStation={localStation}
                         onSelectStation={handleStationSelect}
                         onClear={handleClearStation}
-                        allStations={allStations}
                     />
                 )}
             </div>
@@ -250,14 +249,13 @@ function GpsTab({ mapCenter, localGps, onGpsClick, onClear }: {
 
 // ─── Station Tab ──────────────────────────────────────────────
 
-function StationTab({ stationSearch, setStationSearch, filteredStations, localStation, onSelectStation, onClear, allStations }: {
+function StationTab({ stationSearch, setStationSearch, filteredStations, localStation, onSelectStation, onClear }: {
     stationSearch: string;
     setStationSearch: (v: string) => void;
     filteredStations: { id: string; name: string; line: string }[];
     localStation: Station | null;
     onSelectStation: (station: Station) => void;
     onClear: () => void;
-    allStations: { id: string; name: string; line: string }[];
 }) {
     return (
         <div className="h-full flex flex-col overflow-hidden">

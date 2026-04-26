@@ -202,7 +202,7 @@ export default function NavController({ route, task }: NavControllerProps) {
             </div>
 
             {/* 一般節點指示橫幅（4 秒自動消失） */}
-            {nav.pendingInstruction && !nav.isComplete && !nav.pendingPrompt && (
+            {nav.pendingInstruction && !nav.pendingPrompt && (
                 <div className="absolute top-16 left-4 right-4 z-1000 bg-amber-50 border border-amber-300 px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-amber-800 animate-pulse">
                     {nav.pendingInstruction}
                 </div>
@@ -241,13 +241,7 @@ export default function NavController({ route, task }: NavControllerProps) {
                 </div>
             )}
 
-            {/* 抵達提示 */}
-            {nav.isComplete && (
-                <div className="absolute top-26 left-4 right-4 z-1000 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center flex items-center justify-center gap-2">
-                    <IconMapper emoji="🎉" size={18} /> 已抵達目的地！
-                </div>
-            )}
-
+         
             {/* 底部狀態列 */}
             <div className="absolute bottom-4 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
                 <div className="flex items-center gap-3">
