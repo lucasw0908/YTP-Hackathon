@@ -65,7 +65,7 @@ export default function MapPage() {
             {loading && (
                 <div className="absolute inset-0 z-[2000] bg-white/90 flex flex-col items-center justify-center gap-3">
                     <div className="text-4xl animate-bounce">🗺️</div>
-                    <p className="text-gray-600 font-medium">正在生成今日任務...</p>
+                    <p className="text-gray-600 font-medium">正在根據您的偏好生成任務...</p>
                 </div>
             )}
 
