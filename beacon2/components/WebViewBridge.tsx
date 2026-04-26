@@ -7,8 +7,10 @@ import type { IBeacon } from '../types/t';
 // 確保手機跟電腦在同一個 WiFi 下
 // const WEB_URL = 'http://192.168.0.156:5173/map';
 // const WEB_URL = '192.168.0.156/map';
-const WEB_URL = '10.70.121.29/map';
-// const WEB_URL = '192.168.0.156/login';
+// const WEB_URL = '10.70.121.29/map';
+// const WEB_URL = '192.168.0.156/map';
+const WEB_URL = 'https://test.50313tjx06.workers.dev/map';
+// const WEB_URL = 'http://ianwen.asuscomm.com/login';
 
 export interface WebViewBridgeRef {
   sendBeacons: (beacons: IBeacon[]) => void;
