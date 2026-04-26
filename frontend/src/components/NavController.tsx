@@ -86,12 +86,17 @@ export default function NavController({ route, task }: NavControllerProps) {
         nav.activePositioning === 'beacon' ? 'mrt' : 'map'
     );
 
+    useEffect(()=>{
+        console.log("dd",gps)
+    },[gps])
+    
     useEffect(() => {
         if (!nav.pendingInstruction) return;
         const t = setTimeout(nav.clearInstruction, 4000);
         return () => clearTimeout(t);
     }, [nav.pendingInstruction]);
 
+    
     function handleConfirm() {
         const type = nav.pendingPrompt?.promptType;
         if (type === 'mrt_entry') setActiveTab('mrt');
@@ -173,7 +178,7 @@ export default function NavController({ route, task }: NavControllerProps) {
             )}
 
             {/* 地圖切換按鈕 */}
-            <div className="absolute top-4 right-4 z-[1000] flex bg-white rounded-full shadow-lg p-1 gap-1">
+            <div className="absolute top-15 right-4 z-[1000] flex bg-white rounded-full shadow-lg p-1 gap-1">
                 <button
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTab === 'map' ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
                     onClick={() => setActiveTab('map')}
@@ -238,13 +243,13 @@ export default function NavController({ route, task }: NavControllerProps) {
 
             {/* 抵達提示 */}
             {nav.isComplete && (
-                <div className="absolute top-16 left-4 right-4 z-1000 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center flex items-center justify-center gap-2">
+                <div className="absolute top-26 left-4 right-4 z-1000 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-center flex items-center justify-center gap-2">
                     <IconMapper emoji="🎉" size={18} /> 已抵達目的地！
                 </div>
             )}
 
             {/* 底部狀態列 */}
-            <div className="absolute bottom-14 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
+            <div className="absolute bottom-4 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
                 <div className="flex items-center gap-3">
                     <IconMapper emoji={MODE_EMOJI[nav.activeMode]} size={24} className="shrink-0 text-blue-500" />
                     <div className="flex-1 min-w-0">
