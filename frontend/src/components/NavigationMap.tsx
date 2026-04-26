@@ -71,7 +71,34 @@ function MapAutoCenter({ gps }: { gps: { lat: number; lng: number } | null }) {
 interface Segment {
     mode: TransportMode;
     coords: [number, number][];
-    past: boolean;
+}
+
+/** Build polyline segments split only by mode.
+ *  Metro-exit transitions (walk + stationCode) extend the preceding metro segment
+ *  so the purple line visually reaches the exit station. */
+function buildSegments(waypoints: Route['waypoints']): Segment[] {
+    if (!waypoints.length) return [];
+    const result: Segment[] = [];
+    let cur: Segment | null = null;
+    for (const wp of waypoints) {
+        const ll: [number, number] = [wp.coord[1], wp.coord[0]];
+        const isMetroExit =
+            wp.role === 'transition' &&
+            wp.mode !== 'metro' &&
+            !!(wp as any).stationCode;
+
+        if (isMetroExit && cur?.mode === 'metro') {
+            cur.coords.push(ll);          // extend purple to exit station
+            cur = { mode: wp.mode, coords: [ll] };  // walk starts from same point
+            result.push(cur);
+        } else if (!cur || cur.mode !== wp.mode) {
+            cur = { mode: wp.mode, coords: [ll] };
+            result.push(cur);
+        } else {
+            cur.coords.push(ll);
+        }
+    }
+    return result;
 }
 
 interface NavigationMapProps {
@@ -83,23 +110,14 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
     const { gps } = useLocation();
     const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [25.0478, 121.5170];
 
-    // Segments split by mode AND past/future — color stays, only opacity changes
-    const segments = useMemo<Segment[]>(() => {
-        if (!route.waypoints.length) return [];
-        const result: Segment[] = [];
-        let cur: Segment | null = null;
-        route.waypoints.forEach((wp, idx) => {
-            const ll: [number, number] = [wp.coord[1], wp.coord[0]];
-            const past = idx < currentIndex;
-            if (!cur || cur.mode !== wp.mode || cur.past !== past) {
-                cur = { mode: wp.mode, coords: [ll], past };
-                result.push(cur);
-            } else {
-                cur.coords.push(ll);
-            }
-        });
-        return result;
-    }, [route, currentIndex]);
+    // Bottom dim layer — full static route, no currentIndex dependency
+    const dimSegments = useMemo(() => buildSegments(route.waypoints), [route]);
+
+    // Top bright layer — future portion only, updates as progress advances
+    const futureSegments = useMemo(
+        () => buildSegments(route.waypoints.slice(currentIndex)),
+        [route, currentIndex],
+    );
 
     // All key waypoints — static list, currentIndex only affects icon state
     const keyWaypoints = useMemo(() =>
@@ -139,14 +157,26 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
                 />
                 <MapAutoCenter gps={gps} />
 
-                {/* 完整路線：已過路段保持原色但降低透明度 */}
-                {segments.map((seg, i) => (
+                {/* 底層：完整路線，低透明度（已過路段視覺效果） */}
+                {dimSegments.map((seg, i) => (
                     <Polyline
-                        key={i}
+                        key={`dim-${i}`}
                         positions={seg.coords}
                         color={MODE_COLORS[seg.mode]}
                         weight={seg.mode === 'metro' ? 5 : 6}
-                        opacity={seg.past ? 0.3 : 0.85}
+                        opacity={0.28}
+                        dashArray={seg.mode === 'metro' ? '10, 8' : undefined}
+                    />
+                ))}
+
+                {/* 上層：未來路線，完整顯示，蓋過底層同色區段 */}
+                {futureSegments.map((seg, i) => (
+                    <Polyline
+                        key={`future-${i}`}
+                        positions={seg.coords}
+                        color={MODE_COLORS[seg.mode]}
+                        weight={seg.mode === 'metro' ? 5 : 6}
+                        opacity={0.88}
                         dashArray={seg.mode === 'metro' ? '10, 8' : undefined}
                     />
                 ))}

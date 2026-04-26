@@ -8,6 +8,14 @@ import { useLocation as useLocationCtx } from '../contexts/LocationContext';
 import type { Route, TransportMode, Waypoint } from '../types/wayPoint';
 import stationsRaw from '../assets/stations.json';
 
+import MissionView from './MissionView';
+import type { Task } from '../api/tasksApi';
+
+interface NavControllerProps {
+    route: Route;
+    task?: Task;
+}
+
 type StationRecord = { id: string; name: string; x: number; y: number };
 const stationsData = stationsRaw as StationRecord[];
 
@@ -69,13 +77,6 @@ function computeNextAction(route: Route, currentIndex: number, mode: TransportMo
     return base;
 }
 
-import MissionView from './MissionView';
-import type { Task } from '../api/tasksApi';
-
-interface NavControllerProps {
-    route: Route;
-    task?: Task;
-}
 
 export default function NavController({ route, task }: NavControllerProps) {
     const nav = useNavigation(route);
