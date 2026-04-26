@@ -12,6 +12,8 @@
 |   ![alt text](readme-assets/query.png)   |  ![alt text](readme-assets/spot.png)    |
 | 導航頁面 | 導航頁面 |
 |    ![alt text](readme-assets/route.png)   |  ![alt text](readme-assets/metro.png)    |
+| 任務繳交 - 成功 | 導航頁面 |
+|    ![alt text](readme-assets/submit-success.png)   |  ![alt text](readme-assets/submit-fail.png)    |
 
 
 ## 主要功能與優勢
@@ -47,13 +49,13 @@
 
 ### 行動裝置/藍牙（**beaon2**）
 
-React Native 應用，支援藍牙 Beacon 掃描
+**React Native** 應用，支援藍牙 Beacon 掃描
 與後端同步任務進度
 
 ### 基礎設施
 
-Docker 容器化部署，docker-compose 管理多服務協作
-Nginx 作為反向代理伺服器
+**Docker** 容器化部署，docker-compose 管理多服務協作
+**Nginx** 作為反向代理伺服器
 
 
 
