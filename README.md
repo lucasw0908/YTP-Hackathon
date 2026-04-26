@@ -5,31 +5,47 @@
 
 ## 專案預覽
 
-| 登入介面 | 行前調查 |
-| ---- | ---- |
-| ![](readme-assets/login.png)   |    ![](readme-assets/image.png)    |
-| 行前調查 | 導航頁面 |
-|   ![alt text](readme-assets/query.png)   |  ![alt text](readme-assets/spot.png)    |
-| 導航頁面 | 導航頁面 |
-|    ![alt text](readme-assets/route.png)   |  ![alt text](readme-assets/metro.png)    |
-| 任務繳交 - 成功 | 導航頁面 |
-|    ![alt text](readme-assets/submit-success.png)   |  ![alt text](readme-assets/submit-fail.png)    |
-
+| 登入介面                                                                                                           | 行前調查                                                                                                        | 行前調查                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| ![](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/login.png?raw=true)                  | ![](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/image.png?raw=true)               | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/query.png?raw=true) |
+| 導航頁面                                                                                                           | 導航頁面                                                                                                        | 導航頁面                                                                                                  |
+| ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/spot.png?raw=true)           | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/route.png?raw=true)       | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/metro.png?raw=true) |
+| 任務繳交 - 成功                                                                                                      | 導航頁面                                                                                                        |                                                                                                       |
+| ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/submit-success.png?raw=true) | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/submit-fail.png?raw=true) |                                                                                                       |
 
 ## 主要功能與優勢
 - **DC x Google** 雙登入系統：簡化帳密需求，**快捷登入**
 
-- **智慧旅遊規劃**：依據使用者需求，**客製化推薦**捷運沿線景點與**住宿**，打造專屬行程。
-
-- **雙系統導航**：結合**互動地圖**、**GPS** 與**捷運站內的藍牙 Beacon 訊號**，解決地下站體迷路的問題，室內外導航不中斷。
-
-- **多交通方式導航**：智能算法動態生成
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/login.mp4
 
 - **安全住宿推薦**：自動對接 [**台北市旅宿網站**](https://www.taiwanstay.net.tw/TSA/web_page/TSA010100.jsp) ，過濾非法日租套房，保障出遊安全。
 
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/hotels.mp4
+
+- **智慧旅遊規劃**：依據使用者需求，**客製化推薦**捷運沿線景點與**住宿**，打造專屬行程。
+
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/query.mp4
+
 - **互動式任務挑戰**：抵達指定地點觸發任務與地標打卡，將旅遊化為有趣的**闖關體驗**。
 
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/missions.mp4
+
+- **多交通方式導航**：智能算法動態生成包含 **步行**、**腳踏車**、**捷運** 的路徑指導，並且透過定位即提供指示
+
+- **雙系統導航**：結合**互動地圖**、**GPS** 與**捷運站內的藍牙 Beacon 訊號**，解決地下站體迷路的問題，室內外導航不中斷。
+
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/guide.mp4
+
+- **AI 智慧頻測系統**：連接多模態**大型語言模型**，能準確判斷**是否符合任務要求**以及**原因**
+
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/judge_success.mp4
+
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/judge_fail.mp4
+
 - **極速流暢與高穩定性**：採用 **React** 與 **FastAPI** 現代化架構確保操作滑順，並透過 **Docker** 容器化技術確保多人連線時系統依然穩定運作。
+
+## 實機演示
+https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/land.mp4
 
 ## 技術架構
 ### 前端（Frontend）
@@ -47,7 +63,7 @@
 **PostgreSQL** 作為資料庫，Alembic 管理資料庫遷移
 提供用戶、任務、旅遊計畫等資料管理
 
-### 行動裝置/藍牙（**beaon2**）
+### 行動裝置/藍牙（**beacon2**）
 
 **React Native** 應用，支援藍牙 Beacon 掃描
 與後端同步任務進度
@@ -56,7 +72,6 @@
 
 **Docker** 容器化部署，docker-compose 管理多服務協作
 **Nginx** 作為反向代理伺服器
-
 
 
 
