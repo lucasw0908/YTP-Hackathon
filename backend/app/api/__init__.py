@@ -6,6 +6,7 @@ from .navigation import router as nav_router
 from .plan import router as plan_router
 from .mission import router as mission_router
 
+
 async def resp_headers(response: Response):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["X-Content-Type-Options"] = "nosniff"

@@ -28,6 +28,9 @@ jobs:
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      GEMINI_APIKEY: ${{ secrets.GEMINI_APIKEY }}
+      TAVILY_APIKEY: ${{ secrets.TAVILY_APIKEY }}
+      ORS_API_KEY: ${{ secrets.ORS_API_KEY }}
 
     steps:
     - uses: actions/checkout@v6
