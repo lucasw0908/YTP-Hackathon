@@ -7,53 +7,43 @@
 
 | 登入介面                                                                                                           | 行前調查                                                                                                        | 行前調查                                                                                                  |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| ![](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/login.png?raw=true)                  | ![](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/image.png?raw=true)               | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/query.png?raw=true) |
-| 導航頁面                                                                                                           | 導航頁面                                                                                                        | 導航頁面                                                                                                  |
-| ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/spot.png?raw=true)           | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/route.png?raw=true)       | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/metro.png?raw=true) |
-| 任務繳交 - 成功                                                                                                      | 導航頁面                                                                                                        |                                                                                                       |
-| ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/submit-success.png?raw=true) | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/submit-fail.png?raw=true) |                                                                                                       |
+| ![](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/login.png?blob=main             | ![](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/image.png?blob=main          | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/query.png?blob=main導航頁面                                                                                                           | 導航頁面                                                                                                        | 導航頁面                                                                                                  |
+| ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/spot.png?blob=main      | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/route.png?blob=main  | ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/metro.png?blob=main任務繳交 - 成功                                                                                                      | 導航頁面                                                                                                        |                                                                                                       |
+| ![alt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/submit-success.png?blob=mainalt text](https://github.com/lucasw0908/YTP-Hackathon/blob/readme/readme-assets/submit-fail.png?blob=main                                                                                                    |
 
 ## 主要功能與優勢
 - **DC x Google** 雙登入系統：簡化帳密需求，**快捷登入**
 
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/login.mp4" width="352" height="720"></video>
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/login.mp4
 
 - **安全住宿推薦**：自動對接 [**台北市旅宿網站**](https://www.taiwanstay.net.tw/TSA/web_page/TSA010100.jsp) ，過濾非法日租套房，保障出遊安全。
 
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/hotels.mp4" width="352" height="720"></video>
+https://github.com/YTP-Hackathon/readme-assets/hotels.mp4
 
 - **智慧旅遊規劃**：依據使用者需求，**客製化推薦**捷運沿線景點與**住宿**，打造專屬行程。
 
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/query.mp4" width="352" height="720"></video>
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/query.mp4
 
 - **互動式任務挑戰**：抵達指定地點觸發任務與地標打卡，將旅遊化為有趣的**闖關體驗**。
 
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/missions.mp4" width="352" height="720"></video>
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/missions.mp4
 
 - **多交通方式導航**：智能算法動態生成包含 **步行**、**腳踏車**、**捷運** 的路徑指導，並且透過定位即提供指示
 
 - **雙系統導航**：結合**互動地圖**、**GPS** 與**捷運站內的藍牙 Beacon 訊號**，解決地下站體迷路的問題，室內外導航不中斷。
 
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/guide.mp4" width="352" height="720"></video>
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/guide.mp4
 
 - **AI 智慧頻測系統**：連接多模態**大型語言模型**，能準確判斷**是否符合任務要求**以及**原因**
 
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/judge_success.mp4
 
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/judge_success.mp4" width="352" height="720"></video>
-
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/judge_fail.mp4" width="352" height="720"></video>
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/judge_fail.mp4
 
 - **極速流暢與高穩定性**：採用 **React** 與 **FastAPI** 現代化架構確保操作滑順，並透過 **Docker** 容器化技術確保多人連線時系統依然穩定運作。
 
 ## 實機演示
-
-<video src="https://github.com/lucasw0908/YTP-Hackathon/readme-assets/land.mp4" width="352" height="720"></video>
+https://github.com/lucasw0908/YTP-Hackathon/blob/main/readme-assets/land.mp4
 
 ## 技術架構
 ### 前端（Frontend）
