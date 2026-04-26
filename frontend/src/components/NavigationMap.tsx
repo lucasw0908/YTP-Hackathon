@@ -71,16 +71,19 @@ function MapAutoCenter({ gps }: { gps: { lat: number; lng: number } | null }) {
 interface Segment {
     mode: TransportMode;
     coords: [number, number][];
+    startIdx: number; // absolute waypoint index of this segment's first point
 }
 
 /** Build polyline segments split only by mode.
+ *  offset = absolute index of waypoints[0] in the full route (used for stable keys).
  *  Metro-exit transitions (walk + stationCode) extend the preceding metro segment
  *  so the purple line visually reaches the exit station. */
-function buildSegments(waypoints: Route['waypoints']): Segment[] {
+function buildSegments(waypoints: Route['waypoints'], offset = 0): Segment[] {
     if (!waypoints.length) return [];
     const result: Segment[] = [];
     let cur: Segment | null = null;
-    for (const wp of waypoints) {
+    for (let i = 0; i < waypoints.length; i++) {
+        const wp = waypoints[i];
         const ll: [number, number] = [wp.coord[1], wp.coord[0]];
         const isMetroExit =
             wp.role === 'transition' &&
@@ -88,11 +91,11 @@ function buildSegments(waypoints: Route['waypoints']): Segment[] {
             !!(wp as any).stationCode;
 
         if (isMetroExit && cur?.mode === 'metro') {
-            cur.coords.push(ll);          // extend purple to exit station
-            cur = { mode: wp.mode, coords: [ll] };  // walk starts from same point
+            cur.coords.push(ll);
+            cur = { mode: wp.mode, coords: [ll], startIdx: offset + i };
             result.push(cur);
         } else if (!cur || cur.mode !== wp.mode) {
-            cur = { mode: wp.mode, coords: [ll] };
+            cur = { mode: wp.mode, coords: [ll], startIdx: offset + i };
             result.push(cur);
         } else {
             cur.coords.push(ll);
@@ -113,9 +116,9 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
     // Bottom dim layer — full static route, no currentIndex dependency
     const dimSegments = useMemo(() => buildSegments(route.waypoints), [route]);
 
-    // Top bright layer — future portion only, updates as progress advances
+    // Top bright layer — future portion only, offset = currentIndex for stable absolute keys
     const futureSegments = useMemo(
-        () => buildSegments(route.waypoints.slice(currentIndex)),
+        () => buildSegments(route.waypoints.slice(currentIndex), currentIndex),
         [route, currentIndex],
     );
 
@@ -169,10 +172,12 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
                     />
                 ))}
 
-                {/* 上層：未來路線，完整顯示，蓋過底層同色區段 */}
-                {futureSegments.map((seg, i) => (
+                {/* 上層：未來路線，完整顯示，蓋過底層同色區段
+                    key 使用 startIdx（絕對路點索引）而非陣列 i，
+                    避免 key 複用導致 Leaflet 把同一 SVG path 的顏色更新成不同 mode 的色 */}
+                {futureSegments.map((seg) => (
                     <Polyline
-                        key={`future-${i}`}
+                        key={`future-${seg.startIdx}`}
                         positions={seg.coords}
                         color={MODE_COLORS[seg.mode]}
                         weight={seg.mode === 'metro' ? 5 : 6}

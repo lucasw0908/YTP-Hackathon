@@ -118,7 +118,7 @@ export default function NavController({ route, task }: NavControllerProps) {
         return result;
     }, [route]);
 
-    // 直接比對 code，找不到時用 stations.json 名稱做跨線 fallback
+    // 即時 beacon 比對（有訊號時最準確）
     const activeMetroIndex = useMemo(() => {
         if (!currentStationCode) return -1;
         const directIdx = metroRouteStations.findIndex(s => s.code === currentStationCode);
@@ -127,6 +127,20 @@ export default function NavController({ route, task }: NavControllerProps) {
         if (!stationName) return -1;
         return metroRouteStations.findIndex(s => s.name === stationName);
     }, [currentStationCode, metroRouteStations]);
+
+    // 根據導航進度推算已過站數（beacon 無訊號時的 fallback，取兩者較大值）
+    const activeMetroIndexFromNav = useMemo(() => {
+        let passed = 0;
+        for (let i = 0; i < metroRouteStations.length; i++) {
+            const wpIdx = route.waypoints.findIndex(
+                wp => (wp as any).stationCode === metroRouteStations[i].code
+            );
+            if (wpIdx !== -1 && wpIdx < nav.currentIndex) passed = i + 1;
+        }
+        return passed;
+    }, [metroRouteStations, route.waypoints, nav.currentIndex]);
+
+    const effectiveActiveMetroIndex = Math.max(activeMetroIndex, activeMetroIndexFromNav);
 
     const nextActionText = useMemo(
         () => computeNextAction(route, nav.currentIndex, nav.activeMode, nav.isComplete),
@@ -147,7 +161,7 @@ export default function NavController({ route, task }: NavControllerProps) {
                 <MrtMap
                     hideHeader
                     routeStations={metroRouteStations}
-                    activeRouteIndex={activeMetroIndex}
+                    activeRouteIndex={effectiveActiveMetroIndex}
                 />
             </div>
 
