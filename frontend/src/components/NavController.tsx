@@ -10,6 +10,7 @@ import stationsRaw from '../assets/stations.json';
 
 import MissionView from './MissionView';
 import type { Task } from '../api/tasksApi';
+import { markMissionComplete } from '../api/tasksApi';
 
 interface NavControllerProps {
     route: Route;
@@ -95,6 +96,12 @@ export default function NavController({ route, task }: NavControllerProps) {
         const t = setTimeout(nav.clearInstruction, 4000);
         return () => clearTimeout(t);
     }, [nav.pendingInstruction]);
+
+    useEffect(() => {
+        if (nav.isComplete && task?.task_id) {
+            markMissionComplete(task.task_id);
+        }
+    }, [nav.isComplete, task?.task_id]);
 
 
     function handleConfirm() {

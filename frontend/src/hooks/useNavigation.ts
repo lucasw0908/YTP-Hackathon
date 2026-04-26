@@ -51,6 +51,19 @@ export function useNavigation(route: Route | null): NavStatus {
         Array.from({ length: currentIndex }, (_, i) => i)
     ));
 
+    const isCompleteRef = useRef(false);
+    useEffect(() => { isCompleteRef.current = isComplete; });
+
+    // unmount 或 route 切換時：若未完成就清除進度，下次從頭開始
+    useEffect(() => {
+        const routeId = route?.id;
+        return () => {
+            if (routeId && !isCompleteRef.current) {
+                localStorage.removeItem(`nav_progress_${routeId}`);
+            }
+        };
+    }, [route?.id]);
+
     const waypoints = route?.waypoints ?? [];
     const targetWaypoint = isComplete ? null : (waypoints[currentIndex] ?? null);
 

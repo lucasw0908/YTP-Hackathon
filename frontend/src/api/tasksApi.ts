@@ -161,3 +161,11 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
 export function getTaskById(id: number): Task | undefined {
     return cachedTasks.find(t => t.task_id === id);
 }
+
+export async function markMissionComplete(taskId: number): Promise<void> {
+    try {
+        await fetch(`/api/mission/${taskId}/complete`, { method: 'PATCH' });
+    } catch (e) {
+        console.warn('markMissionComplete failed:', e);
+    }
+}
