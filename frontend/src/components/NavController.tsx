@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Map, Train, Play, Target } from 'lucide-react';
+import { Map, Train, Play, Target, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import NavigationMap from './NavigationMap';
 import MrtMap, { type RouteStationEntry } from './MrtMap';
 import IconMapper from './IconMapper';
@@ -11,6 +11,7 @@ import stationsRaw from '../assets/stations.json';
 import MissionView from './MissionView';
 import type { Task } from '../api/tasksApi';
 import { markMissionComplete } from '../api/tasksApi';
+import { getDepartureTimes, getStationNameById, type DepartureInfo } from '../api/metroApi';
 
 interface NavControllerProps {
     route: Route;
@@ -103,6 +104,29 @@ export default function NavController({ route, task }: NavControllerProps) {
         }
     }, [nav.isComplete, task?.task_id]);
 
+    const [trainPanelOpen, setTrainPanelOpen] = useState(false);
+    const [departures, setDepartures] = useState<DepartureInfo[]>([]);
+    const [loadingDepartures, setLoadingDepartures] = useState(false);
+
+    const fetchDepartures = () => {
+        if (!currentStationCode) return;
+        const stationName = getStationNameById(currentStationCode);
+        if (!stationName) return;
+        setLoadingDepartures(true);
+        getDepartureTimes(stationName).then(data => {
+            setDepartures(data);
+            setLoadingDepartures(false);
+        });
+    };
+
+    useEffect(() => {
+        if (nav.activeMode !== 'metro') {
+            setDepartures([]);
+            setTrainPanelOpen(false);
+            return;
+        }
+        fetchDepartures();
+    }, [currentStationCode, nav.activeMode]);
 
     function handleConfirm() {
         const type = nav.pendingPrompt?.promptType;
@@ -211,7 +235,7 @@ export default function NavController({ route, task }: NavControllerProps) {
             {/* 一般節點指示橫幅（4 秒自動消失） */}
             {nav.isComplete || (nav.pendingInstruction && !nav.pendingPrompt) && (
                 <div className="absolute top-16 left-4 right-4 z-1000 bg-amber-50 border border-amber-300 px-4 py-3 rounded-xl shadow-lg text-sm font-bold text-amber-800 animate-pulse">
-                    {nav.pendingInstruction}
+                    {nav.isComplete ? "到達目的地！" : nav.pendingInstruction}
                 </div>
             )}
 
@@ -249,35 +273,77 @@ export default function NavController({ route, task }: NavControllerProps) {
             )}
 
 
-            {/* 底部狀態列 */}
-            <div className="absolute bottom-4 left-4 right-4 z-1000 bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <IconMapper emoji={MODE_EMOJI[nav.activeMode]} size={24} className="shrink-0 text-blue-500" />
-                    <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-gray-800 leading-snug truncate">
-                            {nextActionText}
-                        </div>
-                        <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
-                            <span className="flex items-center gap-1">
-                                <IconMapper emoji={nav.activePositioning === 'gps' ? '📡' : '🔵'} size={10} />
-                                {nav.activePositioning === 'gps' ? 'GPS' : 'Beacon'}
-                            </span>
-                            <span>{nav.currentIndex} / {route.waypoints.length}</span>
-                            {import.meta.env.DEV && (
-                                <span className={gps ? 'text-green-500' : 'text-red-400'}>
-                                    {gps ? `${gps.lat.toFixed(4)},${gps.lng.toFixed(4)}` : '無GPS'}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                    {import.meta.env.DEV && (
+            {/* 底部區塊（列車動態 + 狀態列） */}
+            <div className="absolute bottom-4 left-4 right-4 z-1000 flex flex-col gap-2">
+
+                {/* 列車動態面板：僅在捷運模式下顯示 */}
+                {nav.activeMode === 'metro' && (
+                    <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg overflow-hidden">
                         <button
-                            onClick={nav.advance}
-                            className="text-xs bg-gray-100 hover:bg-gray-200 p-2 rounded-lg text-gray-600 shrink-0"
+                            onClick={() => setTrainPanelOpen(p => !p)}
+                            className="w-full flex items-center justify-between px-4 py-2.5"
                         >
-                            <Play size={12} fill="currentColor" />
+                            <span className="flex items-center gap-2 text-xs font-bold text-gray-700">
+                                <Train size={13} className="text-blue-500" />
+                                {currentStationCode
+                                    ? (getStationNameById(currentStationCode) ?? '列車動態')
+                                    : '列車動態'}
+                            </span>
+                            <span className="flex items-center gap-2">
+                                {loadingDepartures && (
+                                    <RefreshCw size={11} className="text-gray-400 animate-spin" />
+                                )}
+                                {trainPanelOpen
+                                    ? <ChevronDown size={14} className="text-gray-400" />
+                                    : <ChevronUp size={14} className="text-gray-400" />}
+                            </span>
                         </button>
-                    )}
+                        {trainPanelOpen && (
+                            <div className="border-t border-gray-100 px-4 py-2 max-h-40 overflow-y-auto">
+                                {departures.length === 0 && !loadingDepartures && (
+                                    <p className="text-[11px] text-gray-400 text-center py-2">目前無列車資訊</p>
+                                )}
+                                {departures.map((d, i) => (
+                                    <div key={i} className="flex items-center justify-between py-1 text-xs border-b border-gray-50 last:border-0">
+                                        <span className="text-gray-600 truncate">{d.depart} → {d.destination}</span>
+                                        <span className="font-bold text-blue-600 shrink-0 ml-3">{d.time}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 狀態列 */}
+                <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <IconMapper emoji={MODE_EMOJI[nav.activeMode]} size={24} className="shrink-0 text-blue-500" />
+                        <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold text-gray-800 leading-snug truncate">
+                                {nextActionText}
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
+                                <span className="flex items-center gap-1">
+                                    <IconMapper emoji={nav.activePositioning === 'gps' ? '📡' : '🔵'} size={10} />
+                                    {nav.activePositioning === 'gps' ? 'GPS' : 'Beacon'}
+                                </span>
+                                <span>{nav.currentIndex} / {route.waypoints.length}</span>
+                                {import.meta.env.DEV && (
+                                    <span className={gps ? 'text-green-500' : 'text-red-400'}>
+                                        {gps ? `${gps.lat.toFixed(4)},${gps.lng.toFixed(4)}` : '無GPS'}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {import.meta.env.DEV && (
+                            <button
+                                onClick={nav.advance}
+                                className="text-xs bg-gray-100 hover:bg-gray-200 p-2 rounded-lg text-gray-600 shrink-0"
+                            >
+                                <Play size={12} fill="currentColor" />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

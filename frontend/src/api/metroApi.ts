@@ -52,12 +52,12 @@ export function getStationNameById(stationId: string): string | null {
     for (const line of metroData) {
         // 在該路線的車站列表中尋找符合的代號
         const targetStation = line.Stations.find(station => station.StationID === stationId);
-        
+
         if (targetStation) {
             return targetStation.StationName.Zh_tw;
         }
     }
-    
+
     // 如果全部找完都沒有符合的，回傳 null
     return null;
 }
@@ -75,8 +75,9 @@ import * as cheerio from 'cheerio';
 */
 
 export async function getDepartureTimes(stationName: string): Promise<DepartureInfo[]> {
-    const url = `https://www.opendata.vip/en/metro/departure/${encodeURIComponent(stationName)}`;
-
+    // const url = `https://www.opendata.vip/en/metro/departure/${encodeURIComponent(stationName)}`;
+    const url = `http://127.0.0.1:5000/${encodeURIComponent(stationName)}`
+    
     try {
         const response = await fetch(url, {
             headers: {
@@ -84,12 +85,13 @@ export async function getDepartureTimes(stationName: string): Promise<DepartureI
             }
         });
 
+        console.log(response)
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
 
         // 因為是 HTML，所以用 .text() 而不是 .json()
         const html = await response.text();
-        
+
         // 載入 HTML 準備解析
         const $ = cheerio.load(html);
         const departureList: DepartureInfo[] = [];
@@ -99,10 +101,10 @@ export async function getDepartureTimes(stationName: string): Promise<DepartureI
             // 在這個 col 裡面尋找對應的文字
             const depart = $(element).find('.departStation').text().trim();
             const destination = $(element).find('.destinationStation').text().trim();
-            
+
             // 時間欄位優先抓 label 裡面的字
             let time = $(element).find('.countDown label').text().trim();
-            
+
             // 【保險機制】如果網頁還沒跑 JS 導致 label 沒字，我們直接抓 data-start 的屬性值
             if (!time) {
                 time = $(element).find('.countDown').attr('data-start')?.trim() || '未知時間';
