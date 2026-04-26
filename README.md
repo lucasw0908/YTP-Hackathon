@@ -17,43 +17,43 @@
 - **DC x Google** 雙登入系統：簡化帳密需求，**快捷登入**
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/login.mp4)
+backend/app/data/readme-assets/login.mp4
 
 - **安全住宿推薦**：自動對接 [**台北市旅宿網站**](https://www.taiwanstay.net.tw/TSA/web_page/TSA010100.jsp) ，過濾非法日租套房，保障出遊安全。
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/hotels.mp4)
+backend/app/data/readme-assets/hotels.mp4
 
 - **智慧旅遊規劃**：依據使用者需求，**客製化推薦**捷運沿線景點與**住宿**，打造專屬行程。
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/query.mp4)
+backend/app/data/readme-assets/query.mp4
 
 - **互動式任務挑戰**：抵達指定地點觸發任務與地標打卡，將旅遊化為有趣的**闖關體驗**。
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/missions.mp4)
+backend/app/data/readme-assets/missions.mp4
 
 - **多交通方式導航**：智能算法動態生成包含 **步行**、**腳踏車**、**捷運** 的路徑指導，並且透過定位即提供指示
 
 - **雙系統導航**：結合**互動地圖**、**GPS** 與**捷運站內的藍牙 Beacon 訊號**，解決地下站體迷路的問題，室內外導航不中斷。
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/guide.mp4)
+backend/app/data/readme-assets/guide.mp4
 
 - **AI 智慧頻測系統**：連接多模態**大型語言模型**，能準確判斷**是否符合任務要求**以及**原因**
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/judge_success.mp4)
+backend/app/data/readme-assets/judge_success.mp4
 
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/judge_fail.mp4)
+backend/app/data/readme-assets/judge_fail.mp4
 
 - **極速流暢與高穩定性**：採用 **React** 與 **FastAPI** 現代化架構確保操作滑順，並透過 **Docker** 容器化技術確保多人連線時系統依然穩定運作。
 
 ## 實機演示
 
-[![Watch the video]( )](https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/land.mp4)
+backend/app/data/readme-assets/land.mp4
 
 ## 技術架構
 ### 前端（Frontend）
