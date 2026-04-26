@@ -5,6 +5,9 @@ services:
     container_name: vite
     expose:
       - "5173"
+    volumes:
+      - ./frontend:/src             
+      - /src/node_modules  
 
   backend:
     build: ./backend
@@ -31,7 +34,7 @@ services:
     container_name: postgres
     restart: always
     volumes:
-      - ./postgres-data:/var/lib/postgresql
+      - ./postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -55,6 +58,7 @@ services:
       DOMAIN_NAME: ${DOMAIN_NAME}
     ports:
       - "80:80"
+      - "8080:80"
       - "443:443"
     depends_on:
       - frontend

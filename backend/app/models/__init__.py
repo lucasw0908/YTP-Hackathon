@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import contextlib
 from typing import Annotated, AsyncIterator 
 
@@ -10,7 +11,6 @@ from ..config import get_settings
 
 
 settings = get_settings()
-
 metadata = MetaData()
 
 class Base(DeclarativeBase):
@@ -35,7 +35,7 @@ class DatabaseSessionManager:
             pool_recycle=settings.database.POOL_RECYCLE,
             pool_pre_ping=True
         )
-        self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine)
+        self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine, expire_on_commit=False)
 
     async def close(self):
         if self._engine is None:
@@ -78,4 +78,10 @@ async def get_db_session():
     async with sessionmanager.session() as session:
         yield session
         
-DatabaseDep = Annotated[AsyncSession, Depends(get_db_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
+
+from .users import Users
+from .plans import TravelPlan
+from .missions import Mission
+
+__all__ = [Base, SessionDep, Users, TravelPlan, Mission]
