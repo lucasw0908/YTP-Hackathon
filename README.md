@@ -7,10 +7,11 @@
 
 | 登入介面 | 行前調查 |
 | ---- | ---- |
-|    |    ![](readme-assets/image.png)    |
-| 導航頁面 | 任務頁面 |
-|      |      |
-
+| ![](readme-assets/login.png)   |    ![](readme-assets/image.png)    |
+| 行前調查 | 導航頁面 |
+|   ![alt text](readme-assets/query.png)   |  ![alt text](readme-assets/spot.png)    |
+| 導航頁面 | 導航頁面 |
+|    ![alt text](readme-assets/route.png)   |  ![alt text](readme-assets/metro.png)    |
 
 
 ## 主要功能與優勢
@@ -56,13 +57,5 @@ Nginx 作為反向代理伺服器
 
 
 
-# 示範影片
-1. 快速導覽 - 1：從登入到建立一趟行程挑戰
-影片連結：
-2. 快速導覽 - 2：行程導覽以及挑戰系統
-影片連結：
-3. 如何規劃專屬行程與選擇住宿
-影片連結：
-4. 任務挑戰與地標打卡流程
-影片連結：
+
 
