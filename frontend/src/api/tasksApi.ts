@@ -53,7 +53,61 @@ export function clearCachedTask(): void {
     localStorage.removeItem(TASK_CACHE_KEY);
 }
 
+export const HOMEWARD_TASKS: Task[] = [
+    {
+        task_id: 1,
+        task_name: '內湖737巷的神秘暗號',
+        location_name: '內湖737商圈',
+        description: '作為旅途的起點，你們需要充足的體力。前往737巷商圈，尋找一家招牌上有「豬」圖案的美食攤位，拍下四人與招牌的合照，並買一份小吃作為破冰道具！',
+        nearest_station: '港墘',
+        type: '景點',
+        estimated_duration_mins: 30,
+        location: { lat: 25.079738, lng: 121.5786619 }, // 內湖737巷美食街
+    },
+    {
+        task_id: 2,
+        task_name: '尋找失落的摩天輪軸心',
+        location_name: '美麗華百樂園 1樓廣場',
+        description: '抵達大直商圈！請在美麗華1樓戶外廣場尋找一個特定的「最佳拍照點」（地面通常會有標示）。四人需在這個點位上，利用錯位攝影，拍下一張「有人用手捏住摩天輪」的創意照片。',
+        nearest_station: '劍南路',
+        type: '景點',
+        estimated_duration_mins: 25,
+        location: { lat: 25.0834232, lng: 121.5574584 }, // 美麗華百樂園
+    },
+    {
+        task_id: 3,
+        task_name: '觀景台上的航空情報員',
+        location_name: '松山機場觀景台 (3F)',
+        description: '潛入松山機場！搭乘電梯直達3樓觀景台。你們的任務是觀察停機坪，紀錄下當時停靠的其中兩家「不同航空公司」的尾翼標誌顏色，並在觀景台的飛機模型前完成指定動作打卡。',
+        nearest_station: '松山機場',
+        type: '景點',
+        estimated_duration_mins: 35,
+        location: { lat: 25.0642713, lng: 121.5506989 }, // 松山機場觀景台
+    },
+    {
+        task_id: 4,
+        task_name: '榮星花園的螢火蟲傳說',
+        location_name: '榮星花園',
+        description: '在繁華的台北市區隱藏著生態復育區。請漫步至榮星花園，找到「生態水池」區域，尋找立牌上的生態解說，回答出這座公園主要復育的特有種昆蟲名稱，並在水池邊完成一段大自然ASMR錄音。',
+        nearest_station: '中山國中',
+        type: '景點',
+        estimated_duration_mins: 30,
+        location: { lat: 25.0634668, lng: 121.5391412 }, // 榮星花園公園
+    },
+    {
+        task_id: 5,
+        task_name: '遼寧夜市的最終乾杯',
+        location_name: '遼寧街夜市',
+        description: '天下沒有不散的筵席，這裡即將是小隊分頭回家的換乘點。前往附近的遼寧夜市，找到一家販售「圓形甜品」（如湯圓、車輪餅、地瓜球）的攤販，象徵任務圓滿結束。四人一起舉杯/舉食物乾杯，慶祝今晚的實境大冒險！',
+        nearest_station: '南京復興',
+        type: '景點',
+        estimated_duration_mins: 40,
+        location: { lat: 25.0488683, lng: 121.5421769 }, // 遼寧街夜市
+    }
+];
+
 export async function fetchCurrentTask(): Promise<Task> {
+    
     try {
         const response = await fetch('/api/mission/active');
         if (!response.ok) throw new Error(`API ${response.status}`);
@@ -89,6 +143,7 @@ export async function fetchCurrentTask(): Promise<Task> {
 let cachedTasks: Task[] = [];
 
 export async function fetchTasks(userLat: number, userLng: number): Promise<Task[]> {
+    return HOMEWARD_TASKS
     try {
         // 調用正式 API (若有需要傳送經緯度，以 Query 方式帶入)
         const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
@@ -97,12 +152,12 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
         if (!response.ok) {
             throw new Error(`API 請求失敗: ${response.status}`);
         }
-
+        
         const data = await response.json();
-
+        
         if (!data.success || !data.missions) {
             console.error("API 回傳格式錯誤或失敗:", data);
-            return [];
+            throw new Error(`API 請求失敗: ${response.status}`);
         }
 
         // 資料 Mapping：將 API 格式轉換為前端 UI 所需格式
@@ -159,6 +214,7 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
 
 // 供其他頁面透過 ID 查詢已抓取的任務
 export function getTaskById(id: number): Task | undefined {
+    return HOMEWARD_TASKS.find(t => t.task_id === id);
     return cachedTasks.find(t => t.task_id === id);
 }
 
