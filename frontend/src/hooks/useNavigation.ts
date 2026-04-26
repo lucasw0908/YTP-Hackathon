@@ -141,11 +141,13 @@ export function useNavigation(route: Route | null): NavStatus {
     }, [gps, targetWaypoint, isComplete, currentIndex, handleArrival, waypoints, pendingPrompt]);
 
     // Beacon 站碼比對
+    // positioning 欄位描述「此點之後」的定位方式，不代表偵測此點的方法。
+    // 只要 waypoint 有 stationCode（含出站 transition）就用 beacon 比對。
     useEffect(() => {
         if (!currentStationCode || !targetWaypoint || isComplete || pendingPrompt) return;
-        if (targetWaypoint.positioning !== 'beacon') return;
         const wp = targetWaypoint as { stationCode?: string };
-        if (wp.stationCode && wp.stationCode === currentStationCode) {
+        if (!wp.stationCode) return;
+        if (wp.stationCode === currentStationCode) {
             handleArrival(currentIndex, waypoints);
         }
     }, [currentStationCode, targetWaypoint, isComplete, currentIndex, handleArrival, waypoints, pendingPrompt]);

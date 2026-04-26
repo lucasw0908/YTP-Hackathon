@@ -91,7 +91,8 @@ let cachedTasks: Task[] = [];
 export async function fetchTasks(userLat: number, userLng: number): Promise<Task[]> {
     try {
         // 調用正式 API (若有需要傳送經緯度，以 Query 方式帶入)
-        const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
+        // const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
+        const response = await fetch(`/api/mission/newmission?`);
 
         if (!response.ok) {
             throw new Error(`API 請求失敗: ${response.status}`);
