@@ -16,7 +16,7 @@
 ## 主要功能與優勢
 - **DC x Google** 雙登入系統：簡化帳密需求，**快捷登入**
 
-https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/login.mp4
+<video src=https://github.com/lucasw0908/YTP-Hackathon/raw/refs/heads/readme/readme-assets/login.mp4>
 
 - **安全住宿推薦**：自動對接 [**台北市旅宿網站**](https://www.taiwanstay.net.tw/TSA/web_page/TSA010100.jsp) ，過濾非法日租套房，保障出遊安全。
 
