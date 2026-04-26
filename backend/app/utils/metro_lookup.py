@@ -1,7 +1,8 @@
 import json
 import os
 import math
-from typing import Dict, List, Optional
+from typing import Optional
+
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371000  # Earth radius in meters
@@ -17,7 +18,7 @@ class MetroLookup:
         with open(file_path, "r", encoding="utf-8") as f:
             self.stations = json.load(f)
 
-    def find_nearest_station(self, lat: float, lng: float) -> Optional[Dict]:
+    def find_nearest_station(self, lat: float, lng: float) -> Optional[dict]:
         if lat is None or lng is None:
             return None
             

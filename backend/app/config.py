@@ -136,6 +136,7 @@ class DefaultSettings(BaseModel):
 class APISettings(BaseModel):
     TAVILY_APIKEY: str = EnvManager.get("TAVILY_APIKEY")
     GEMINI_APIKEY: str = EnvManager.get("GEMINI_APIKEY")
+    ORS_API_KEY: str = EnvManager.get("ORS_API_KEY")
 
 
 class SocialLinks(BaseModel):

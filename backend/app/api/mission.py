@@ -6,7 +6,7 @@ import httpx
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from google import genai
 from google.genai import types
@@ -17,6 +17,7 @@ from ..config import SettingsDep
 from ..utils.weather_query import get_weather
 from ..utils.event_query import EventQueryManager, SearchRequest
 from ..utils.metro_lookup import MetroLookup
+
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/mission")
@@ -72,14 +73,13 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
         raise HTTPException(status_code=404, detail="No travel plan found for user. Please complete the survey first.")
     
     plan_data = plan_record.data
-    prefs = plan_data.get("preferences", {})
+    prefs: dict = plan_data.get("preferences", {})
     
     lat, lng = 25.0330, 121.5654
     weather_status = get_weather(lat, lng, datetime.now())
     weather_desc = f"天氣狀態: {weather_status.status} (WMO Code: {weather_status.WMO_CODE})"
     
-    static_dir = os.path.join(settings.BASEDIR, "data", "static")
-    events_file = os.path.join(static_dir, "events.json")
+    events_file = os.path.join(settings.BASEDIR, "data", "events.json")
     events_desc = "今日無重大公開活動"
     
     if os.path.exists(events_file):
@@ -148,8 +148,8 @@ async def generate_new_missions(session: SessionDep, settings: SettingsDep, user
     tasks = [geocode_location(t.location_name) for t in mission_data.tasks]
     coordinates = await asyncio.gather(*tasks)
 
-    metro = MetroLookup(static_dir)
-    new_missions = []
+    metro = MetroLookup(os.path.join(settings.BASEDIR, "data", "static"))
+    new_missions: list[Mission] = []
     
     for t, coords in zip(mission_data.tasks, coordinates):
         if not coords:

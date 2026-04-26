@@ -93,8 +93,6 @@ class MRTNetwork:
                 if neighbor not in visited:
                     visited.add(neighbor)
                     queue.append(curr_path + [neighbor])
-                    
-        if not path: return []
         
         result = []
         for s_id in path:
@@ -113,12 +111,9 @@ class YouBikeManager:
         self._fetch_data()
         
     def _fetch_data(self):
-        try:
-            res = requests.get("https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json")
-            if res.status_code == 200:
-                self.stations = res.json()
-        except:
-            pass
+        res = requests.get("https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json")
+        if res.status_code == 200:
+            self.stations: dict[dict] = res.json()
 
     def _haversine(self, lat1, lon1, lat2, lon2):
         R, phi1, phi2 = 6371000, math.radians(lat1), math.radians(lat2)
@@ -126,14 +121,17 @@ class YouBikeManager:
         a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
         return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    def find_nearest_station(self, lat, lon, action="rent", max_dist=800):
+    def find_nearest_station(self, lat: float, lon: float, action: str="rent", max_dist: int=800):
         best_station = None
         min_dist = max_dist
         
         for st in self.stations:
-            if st.get('act') != '1': continue
-            if action == "rent" and st.get('available_rent_bikes', 0) == 0: continue
-            if action == "return" and st.get('available_return_bikes', 0) == 0: continue
+            if st.get('act') != '1':
+                continue
+            if action == "rent" and st.get('available_rent_bikes', 0) == 0:
+                continue
+            if action == "return" and st.get('available_return_bikes', 0) == 0:
+                continue
                 
             d = self._haversine(lat, lon, st['latitude'], st['longitude'])
             if d < min_dist:
@@ -153,8 +151,7 @@ class NavigationMVP:
         self.mrt = MRTNetwork(loc_data, line_data)
         self.youbike = YouBikeManager()
 
-    def _optimize_with_youbike(self, start_loc, end_loc, walk_route):
-        if not walk_route: return None
+    def _optimize_with_youbike(self, start_loc: list[float], end_loc: list[float], walk_route: dict[dict]): 
         rent_st = self.youbike.find_nearest_station(start_loc[1], start_loc[0], action="rent", max_dist=600)
         return_st = self.youbike.find_nearest_station(end_loc[1], end_loc[0], action="return", max_dist=600)
         
@@ -177,7 +174,7 @@ class NavigationMVP:
                     ], total_duration, total_distance
         return None
 
-    def _add_surface_segments(self, waypoints, segments):
+    def _add_surface_segments(self, waypoints: list[dict], segments: list[dict]):
         for seg in segments:
             coords = seg["coords"]
             mode = seg["mode"]
@@ -201,8 +198,8 @@ class NavigationMVP:
                     "positioning": "gps"
                 })
 
-    def plan(self, start_coord, end_coord):
-        waypoints = []
+    def plan(self, start_coord: list[float], end_coord: list[float]):
+        waypoints: list[dict] = []
         total_duration = 0
         total_distance = 0
 

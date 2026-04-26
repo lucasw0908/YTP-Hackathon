@@ -1,6 +1,8 @@
 import logging
 import logging.handlers
 import os
+import json
+from datetime import datetime
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,7 +12,6 @@ from .api import get_api_router
 from .config import get_settings
 from .models import sessionmanager
 from .utils.event_query import EventQueryManager, SearchRequest
-import json
 
 
 log = logging.getLogger(__name__)
@@ -61,12 +62,8 @@ def create_app() -> FastAPI:
     # Initialize the app
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        # Prefetch events on startup
         try:
-            static_dir = os.path.join(settings.BASEDIR, "data", "static")
-            os.makedirs(static_dir, exist_ok=True)
-            events_file = os.path.join(static_dir, "events.json")
-            
+            events_file = os.path.join(settings.BASEDIR, "data", "events.json")
             should_fetch = True
             if os.path.exists(events_file):
                 file_age = datetime.now().timestamp() - os.path.getmtime(events_file)
@@ -84,10 +81,12 @@ def create_app() -> FastAPI:
                 with open(events_file, "w", encoding="utf-8") as f:
                     json.dump(events_data, f, ensure_ascii=False, indent=4)
                 log.info(f"Successfully prefetched {len(events_data)} events.")
+                
         except Exception as e:
             log.error(f"Failed to prefetch events: {e}")
 
         yield
+        
         if sessionmanager._engine is not None:
             await sessionmanager.close()
             

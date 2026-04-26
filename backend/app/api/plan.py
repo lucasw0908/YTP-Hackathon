@@ -1,16 +1,19 @@
 import logging
-from fastapi import APIRouter, Depends
-from ..models import SessionDep, TravelPlan
+from typing import Optional, Any
+
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from fastapi import APIRouter
+
+from ..models import SessionDep, TravelPlan
+
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/plan")
 
 class PlanPayload(BaseModel):
-    basic: Optional[Dict[str, Any]] = None
-    accommodation: Optional[Dict[str, Any]] = None
-    preferences: Optional[Dict[str, Any]] = None
+    basic: Optional[dict[str, Any]] = None
+    accommodation: Optional[dict[str, Any]] = None
+    preferences: Optional[dict[str, Any]] = None
 
 @router.post("/save")
 async def save_plan(payload: PlanPayload, session: SessionDep):

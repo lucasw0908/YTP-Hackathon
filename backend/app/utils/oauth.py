@@ -5,9 +5,7 @@ from typing import Optional, override
 from fastapi import Request, HTTPException
 from google.auth.transport import requests
 from google_auth_oauthlib.flow import Flow
-from google.auth.exceptions import GoogleAuthError
 from google.oauth2 import id_token
-from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from sqlalchemy.ext.asyncio import AsyncSession
 from zenora import APIClient, APIError
 
