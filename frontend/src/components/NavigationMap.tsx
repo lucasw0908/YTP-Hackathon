@@ -71,7 +71,37 @@ function MapAutoCenter({ gps }: { gps: { lat: number; lng: number } | null }) {
 interface Segment {
     mode: TransportMode;
     coords: [number, number][];
-    past: boolean;
+    startIdx: number; // absolute waypoint index of this segment's first point
+}
+
+/** Build polyline segments split only by mode.
+ *  offset = absolute index of waypoints[0] in the full route (used for stable keys).
+ *  Metro-exit transitions (walk + stationCode) extend the preceding metro segment
+ *  so the purple line visually reaches the exit station. */
+function buildSegments(waypoints: Route['waypoints'], offset = 0): Segment[] {
+    if (!waypoints.length) return [];
+    const result: Segment[] = [];
+    let cur: Segment | null = null;
+    for (let i = 0; i < waypoints.length; i++) {
+        const wp = waypoints[i];
+        const ll: [number, number] = [wp.coord[1], wp.coord[0]];
+        const isMetroExit =
+            wp.role === 'transition' &&
+            wp.mode !== 'metro' &&
+            !!(wp as any).stationCode;
+
+        if (isMetroExit && cur?.mode === 'metro') {
+            cur.coords.push(ll);
+            cur = { mode: wp.mode, coords: [ll], startIdx: offset + i };
+            result.push(cur);
+        } else if (!cur || cur.mode !== wp.mode) {
+            cur = { mode: wp.mode, coords: [ll], startIdx: offset + i };
+            result.push(cur);
+        } else {
+            cur.coords.push(ll);
+        }
+    }
+    return result;
 }
 
 interface NavigationMapProps {
@@ -83,23 +113,14 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
     const { gps } = useLocation();
     const centerPos: [number, number] = gps ? [gps.lat, gps.lng] : [25.0478, 121.5170];
 
-    // Segments split by mode AND past/future — color stays, only opacity changes
-    const segments = useMemo<Segment[]>(() => {
-        if (!route.waypoints.length) return [];
-        const result: Segment[] = [];
-        let cur: Segment | null = null;
-        route.waypoints.forEach((wp, idx) => {
-            const ll: [number, number] = [wp.coord[1], wp.coord[0]];
-            const past = idx < currentIndex;
-            if (!cur || cur.mode !== wp.mode || cur.past !== past) {
-                cur = { mode: wp.mode, coords: [ll], past };
-                result.push(cur);
-            } else {
-                cur.coords.push(ll);
-            }
-        });
-        return result;
-    }, [route, currentIndex]);
+    // Bottom dim layer — full static route, no currentIndex dependency
+    const dimSegments = useMemo(() => buildSegments(route.waypoints), [route]);
+
+    // Top bright layer — future portion only, offset = currentIndex for stable absolute keys
+    const futureSegments = useMemo(
+        () => buildSegments(route.waypoints.slice(currentIndex), currentIndex),
+        [route, currentIndex],
+    );
 
     // All key waypoints — static list, currentIndex only affects icon state
     const keyWaypoints = useMemo(() =>
@@ -139,14 +160,28 @@ export default function NavigationMap({ route, currentIndex = 0 }: NavigationMap
                 />
                 <MapAutoCenter gps={gps} />
 
-                {/* 完整路線：已過路段保持原色但降低透明度 */}
-                {segments.map((seg, i) => (
+                {/* 底層：完整路線，低透明度（已過路段視覺效果） */}
+                {dimSegments.map((seg, i) => (
                     <Polyline
-                        key={i}
+                        key={`dim-${i}`}
                         positions={seg.coords}
                         color={MODE_COLORS[seg.mode]}
                         weight={seg.mode === 'metro' ? 5 : 6}
-                        opacity={seg.past ? 0.3 : 0.85}
+                        opacity={0.28}
+                        dashArray={seg.mode === 'metro' ? '10, 8' : undefined}
+                    />
+                ))}
+
+                {/* 上層：未來路線，完整顯示，蓋過底層同色區段
+                    key 使用 startIdx（絕對路點索引）而非陣列 i，
+                    避免 key 複用導致 Leaflet 把同一 SVG path 的顏色更新成不同 mode 的色 */}
+                {futureSegments.map((seg) => (
+                    <Polyline
+                        key={`future-${seg.startIdx}`}
+                        positions={seg.coords}
+                        color={MODE_COLORS[seg.mode]}
+                        weight={seg.mode === 'metro' ? 5 : 6}
+                        opacity={0.88}
                         dashArray={seg.mode === 'metro' ? '10, 8' : undefined}
                     />
                 ))}

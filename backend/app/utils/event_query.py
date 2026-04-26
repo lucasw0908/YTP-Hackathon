@@ -1,13 +1,12 @@
 import json
 import logging
+import asyncio
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 from tavily import TavilyClient
 from google import genai
 from geopy.geocoders import ArcGIS
-import asyncio
 
 from ..config import SettingsDep
 

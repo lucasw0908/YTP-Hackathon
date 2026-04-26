@@ -1,9 +1,12 @@
 import logging
-from typing import Optional, Any
-from sqlalchemy import String, JSON, ForeignKey
+from typing import Optional
+
+from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
+
 from . import Base
 from .mixin import TimeStampMixin
+
 
 log = logging.getLogger(__name__)
 

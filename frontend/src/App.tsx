@@ -5,6 +5,7 @@ import NavPage from './pages/NavPage';
 import LoginPage from './pages/LoginPage';
 import OAuthCallback from './pages/OAuthCallback';
 import TaskPage from './pages/TaskPage';
+import SimulationPage from './pages/SimulationPage';
 import { LocationProvider } from './contexts/LocationContext';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/map" element={<MapPage />} />
         <Route path="/task/:taskId" element={<TaskPage />} />
         <Route path="/nav" element={<NavPage />} />
+        <Route path="/simulation" element={<SimulationPage />} />
 
           {/* 認證與登入 */}
           <Route path="/login" element={<LoginPage />} />
