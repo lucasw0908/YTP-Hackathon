@@ -17,7 +17,6 @@ export default function TaskPage() {
     const task: Task | undefined = routerState ?? getTaskById(Number(taskId));
 
     const [route, setRoute] = useState<Route | null>(null);
-    const [sheetOpen, setSheetOpen] = useState(false);
 
     useEffect(() => {
         if (!task) return;
@@ -67,43 +66,11 @@ export default function TaskPage() {
                 )}
 
                 {/* 底部任務資訊抽屜 */}
-                <div className=" z-[1001] bg-white rounded-t-2xl shadow-2xl pb-10">
-                    {/* 把手列 */}
-                    <button
-                        className="w-full flex items-center justify-between px-4 py-3"
-                        onClick={() => setSheetOpen(o => !o)}
-                    >
-                        <div className="flex items-center gap-2 min-w-0">
-                            <IconMapper emoji={TYPE_EMOJI[task.type]} size={20} className="shrink-0" />
-                            <span className="text-sm font-bold text-gray-800 truncate">{task.location_name}</span>
-                        </div>
-                        {sheetOpen
-                            ? <ChevronDown size={18} className="text-gray-400 shrink-0" />
-                            : <ChevronUp size={18} className="text-gray-400 shrink-0" />}
-                    </button>
-
-                    {sheetOpen && (
-                        <div className="px-4 pb-5 space-y-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-600 leading-relaxed pt-2">
-                                {task.description}
-                            </p>
-                            <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                                <p className="text-[11px] font-bold text-amber-700 mb-0.5">任務目標</p>
-                                <p className="text-xs text-amber-800">{task.task_name}</p>
-                            </div>
-                            <p className="text-xs text-gray-400 flex items-center gap-1">
-                                <Clock size={12} /> 預計 {task.estimated_duration_mins} 分鐘
-                            </p>
-                            <div className="flex gap-3 pt-1">
-                                <button
-                                    className="flex-1 bg-gray-100 active:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
-                                    onClick={() => navigate('/map')}
-                                >
-                                    <XCircle size={16} /> 返回地圖
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                <div className=" z-[1001] bg-white rounded-t-2xl shadow-2xl pb-10 px-4 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <IconMapper emoji={TYPE_EMOJI[task.type]} size={20} className="shrink-0" />
+                        <span className="text-sm font-bold text-gray-800 truncate">{task.location_name}</span>
+                    </div>
                 </div>
             </div>
         </div>

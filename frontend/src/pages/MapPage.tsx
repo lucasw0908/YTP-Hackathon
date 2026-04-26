@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Clock, ChevronRight, X, Train } from 'lucide-react';
+import { Clock, ChevronRight, X, Train, Map } from 'lucide-react';
 import { fetchTasks, Task, TaskType, TYPE_COLORS, TYPE_EMOJI } from '../api/tasksApi';
 import { useLocation as useGPS } from '../contexts/LocationContext';
+import MrtMap, { type RouteStationEntry, type Station } from '../components/MrtMap';
+import stationsRaw from '../assets/stations.json';
+
+const stationsData = stationsRaw as Station[];
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -45,6 +49,7 @@ export default function MapPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [selected, setSelected] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'map' | 'mrt'>('map');
 
     const center: [number, number] = gps ? [gps.lat, gps.lng] : [25.0478, 121.517];
 
@@ -55,8 +60,33 @@ export default function MapPage() {
             .finally(() => setLoading(false));
     }, []);
 
+    // 所有任務最近站（去重）作為捷運圖上的標記
+    const taskStations = useMemo<RouteStationEntry[]>(() => {
+        const seen = new Set<string>();
+        const result: RouteStationEntry[] = [];
+        for (const t of tasks) {
+            if (t.nearest_station && !seen.has(t.nearest_station)) {
+                seen.add(t.nearest_station);
+                result.push({ code: '', name: t.nearest_station });
+            }
+        }
+        return result;
+    }, [tasks]);
+
+    // 選中任務對應的 Station 物件（用於 MrtMap selectedStation）
+    const selectedMrtStation = useMemo<Station | null>(() => {
+        if (!selected?.nearest_station) return null;
+        return stationsData.find(s => s.name === selected.nearest_station) ?? null;
+    }, [selected]);
+
     const handleMarkerClick = (task: Task) => {
         setSelected(prev => prev?.task_id === task.task_id ? null : task);
+    };
+
+    // 在捷運圖點站 → 找到對應任務並選取
+    const handleMrtStationSelect = (station: Station) => {
+        const match = tasks.find(t => t.nearest_station === station.name);
+        if (match) setSelected(prev => prev?.task_id === match.task_id ? null : match);
     };
 
     return (
@@ -69,37 +99,65 @@ export default function MapPage() {
                 </div>
             )}
 
-            {/* Leaflet 地圖 */}
-            <MapContainer
-                center={center}
-                zoom={14}
-                style={{ height: '100%', width: '100%', zIndex: 10 }}
-                zoomControl={false}
-            >
-                <TileLayer
-                    attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                />
-                <MapClickHandler onMapClick={() => setSelected(null)} />
-
-                {tasks.map(task => (
-                    <Marker
-                        key={task.task_id}
-                        position={[task.location.lat, task.location.lng]}
-                        icon={makeTaskMarker(task.type, selected?.task_id === task.task_id)}
-                        eventHandlers={{
-                            click: e => {
-                                e.originalEvent.stopPropagation();
-                                handleMarkerClick(task);
-                            },
-                        }}
+            {/* Leaflet 地圖層 */}
+            <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === 'map' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <MapContainer
+                    center={center}
+                    zoom={14}
+                    style={{ height: '100%', width: '100%', zIndex: 10 }}
+                    zoomControl={false}
+                >
+                    <TileLayer
+                        attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                     />
-                ))}
+                    <MapClickHandler onMapClick={() => setSelected(null)} />
 
-                {gps && (
-                    <Marker position={[gps.lat, gps.lng]} icon={userDot} zIndexOffset={1000} />
-                )}
-            </MapContainer>
+                    {tasks.map(task => (
+                        <Marker
+                            key={task.task_id}
+                            position={[task.location.lat, task.location.lng]}
+                            icon={makeTaskMarker(task.type, selected?.task_id === task.task_id)}
+                            eventHandlers={{
+                                click: e => {
+                                    e.originalEvent.stopPropagation();
+                                    handleMarkerClick(task);
+                                },
+                            }}
+                        />
+                    ))}
+
+                    {gps && (
+                        <Marker position={[gps.lat, gps.lng]} icon={userDot} zIndexOffset={1000} />
+                    )}
+                </MapContainer>
+            </div>
+
+            {/* 捷運圖層 */}
+            <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === 'mrt' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <MrtMap
+                    hideHeader
+                    routeStations={taskStations}
+                    selectedStation={selectedMrtStation}
+                    onStationSelect={handleMrtStationSelect}
+                />
+            </div>
+
+            {/* 地圖切換按鈕 */}
+            <div className="absolute top-4 right-4 z-1000 flex bg-white rounded-full shadow-lg p-1 gap-1">
+                <button
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTab === 'map' ? 'bg-blue-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    onClick={() => setActiveTab('map')}
+                >
+                    <Map size={13} /> 地圖
+                </button>
+                <button
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeTab === 'mrt' ? 'bg-purple-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    onClick={() => setActiveTab('mrt')}
+                >
+                    <Train size={13} /> 捷運
+                </button>
+            </div>
 
             {/* 底部面板 */}
             <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white rounded-t-2xl shadow-2xl pb-10 transition-transform duration-300">

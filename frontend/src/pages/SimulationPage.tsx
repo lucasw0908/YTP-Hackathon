@@ -2,53 +2,29 @@ import { useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { MapPin, Radio, ToggleLeft, ToggleRight, Search, X } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
-import stationsRaw from '../assets/stations.json';
+import MrtMap, { type Station } from '../components/MrtMap';
 import lineInfoRaw from '../assets/line_info.json';
-import mapImg from '../assets/metro.png';
-
-// ─── Types ────────────────────────────────────────────────────
-
-interface Station {
-    id: string;
-    name: string;
-    x: number;
-    y: number;
-}
 
 interface LineStation {
     StationID: string;
     StationName: { Zh_tw: string; En: string };
-    Sequence: number;
 }
-
 interface LineInfo {
     LineNo: string;
     LineID: string;
     Stations: LineStation[];
 }
-
-const stationsData = stationsRaw as Station[];
 const lineInfo = lineInfoRaw as LineInfo[];
 
 const LINE_COLORS: Record<string, string> = {
-    BL: '#0070bd',
-    BR: '#c48a00',
-    G:  '#008659',
-    O:  '#e87722',
-    R:  '#e3002c',
-    Y:  '#f5d800',
+    BL: '#0070bd', BR: '#c48a00', G: '#008659',
+    O: '#e87722',  R: '#e3002c', Y: '#f5d800',
 };
-
 const LINE_NAMES: Record<string, string> = {
-    BL: '板南線',
-    BR: '文湖線',
-    G:  '松山新店線',
-    O:  '中和新蘆線',
-    R:  '淡水信義線',
-    Y:  '環狀線',
+    BL: '板南線', BR: '文湖線', G: '松山新店線',
+    O: '中和新蘆線', R: '淡水信義線', Y: '環狀線',
 };
 
 // ─── Leaflet helpers ──────────────────────────────────────────
@@ -68,9 +44,7 @@ const simGpsIcon = L.divIcon({
 });
 
 function GpsClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-    useMapEvents({
-        click: (e) => onMapClick(e.latlng.lat, e.latlng.lng),
-    });
+    useMapEvents({ click: (e) => onMapClick(e.latlng.lat, e.latlng.lng) });
     return null;
 }
 
@@ -79,10 +53,8 @@ function GpsClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 export default function SimulationPage() {
     const { isSimulationMode, setSimulationMode, setSimulatedGps, setSimulatedStation, gps } = useLocation();
     const [tab, setTab] = useState<'gps' | 'station'>('gps');
-
-    // Local state (mirrors what's committed to context)
     const [localGps, setLocalGps] = useState<{ lat: number; lng: number } | null>(null);
-    const [localStationId, setLocalStationId] = useState<string | null>(null);
+    const [localStation, setLocalStation] = useState<Station | null>(null);
     const [stationSearch, setStationSearch] = useState('');
 
     const handleToggle = () => setSimulationMode(!isSimulationMode);
@@ -93,30 +65,19 @@ export default function SimulationPage() {
         setSimulatedGps(pos);
     };
 
-    const handleStationSelect = (id: string) => {
-        setLocalStationId(id);
-        setSimulatedStation(id);
+    const handleStationSelect = (station: Station) => {
+        setLocalStation(station);
+        setSimulatedStation(station.id);
         setStationSearch('');
     };
 
-    const handleClearGps = () => {
-        setLocalGps(null);
-        setSimulatedGps(null);
-    };
+    const handleClearGps = () => { setLocalGps(null); setSimulatedGps(null); };
+    const handleClearStation = () => { setLocalStation(null); setSimulatedStation(null); };
 
-    const handleClearStation = () => {
-        setLocalStationId(null);
-        setSimulatedStation(null);
-    };
-
-    const activeStation = stationsData.find(s => s.id === localStationId) ?? null;
     const mapCenter: [number, number] = localGps
         ? [localGps.lat, localGps.lng]
-        : gps
-        ? [gps.lat, gps.lng]
-        : [25.0478, 121.517];
+        : gps ? [gps.lat, gps.lng] : [25.0478, 121.517];
 
-    // Flat list of all stations for search
     const allStations = useMemo(() => {
         const seen = new Set<string>();
         const result: { id: string; name: string; line: string }[] = [];
@@ -135,8 +96,7 @@ export default function SimulationPage() {
         if (!stationSearch.trim()) return [];
         const q = stationSearch.toLowerCase();
         return allStations.filter(s =>
-            s.name.includes(stationSearch) ||
-            s.id.toLowerCase().includes(q)
+            s.name.includes(stationSearch) || s.id.toLowerCase().includes(q)
         ).slice(0, 10);
     }, [stationSearch, allStations]);
 
@@ -152,19 +112,13 @@ export default function SimulationPage() {
                     <button
                         onClick={handleToggle}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
-                            isSimulationMode
-                                ? 'bg-purple-500 text-white'
-                                : 'bg-gray-100 text-gray-600'
+                            isSimulationMode ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'
                         }`}
                     >
-                        {isSimulationMode
-                            ? <><ToggleRight size={16} /> 模擬中</>
-                            : <><ToggleLeft size={16} /> 已停用</>
-                        }
+                        {isSimulationMode ? <><ToggleRight size={16} /> 模擬中</> : <><ToggleLeft size={16} /> 已停用</>}
                     </button>
                 </div>
 
-                {/* Status pills */}
                 <div className="flex gap-2 flex-wrap">
                     <StatusPill
                         icon={<MapPin size={11} />}
@@ -176,10 +130,8 @@ export default function SimulationPage() {
                     <StatusPill
                         icon={<Radio size={11} />}
                         label="捷運站"
-                        value={localStationId
-                            ? `${allStations.find(s => s.id === localStationId)?.name ?? ''} (${localStationId})`
-                            : '未設定'}
-                        active={isSimulationMode && !!localStationId}
+                        value={localStation ? `${localStation.name} (${localStation.id})` : '未設定'}
+                        active={isSimulationMode && !!localStation}
                         color="purple"
                     />
                 </div>
@@ -216,11 +168,9 @@ export default function SimulationPage() {
                         stationSearch={stationSearch}
                         setStationSearch={setStationSearch}
                         filteredStations={filteredStations}
-                        localStationId={localStationId}
+                        localStation={localStation}
                         onSelectStation={handleStationSelect}
                         onClear={handleClearStation}
-                        activeStation={activeStation}
-                        allStations={allStations}
                     />
                 )}
             </div>
@@ -228,16 +178,14 @@ export default function SimulationPage() {
     );
 }
 
-// ─── Sub-components ───────────────────────────────────────────
+// ─── Shared sub-components ────────────────────────────────────
 
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
     return (
         <button
             onClick={onClick}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors border-b-2 ${
-                active
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                active ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
         >
             {children}
@@ -272,36 +220,21 @@ function GpsTab({ mapCenter, localGps, onGpsClick, onClear }: {
     return (
         <div className="h-full flex flex-col">
             <div className="px-3 py-2 bg-blue-50 border-b border-blue-100 flex-shrink-0 flex items-center justify-between">
-                <p className="text-xs text-blue-700 font-medium">
-                    點擊地圖任意位置來設定模擬 GPS 座標
-                </p>
+                <p className="text-xs text-blue-700 font-medium">點擊地圖任意位置來設定模擬 GPS 座標</p>
                 {localGps && (
-                    <button
-                        onClick={onClear}
-                        className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium"
-                    >
+                    <button onClick={onClear} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium">
                         <X size={12} /> 清除
                     </button>
                 )}
             </div>
             <div className="flex-1">
-                <MapContainer
-                    center={mapCenter}
-                    zoom={14}
-                    style={{ height: '100%', width: '100%' }}
-                    zoomControl={true}
-                >
+                <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }} zoomControl>
                     <TileLayer
                         attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
                         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                     />
                     <GpsClickHandler onMapClick={onGpsClick} />
-                    {localGps && (
-                        <Marker
-                            position={[localGps.lat, localGps.lng]}
-                            icon={simGpsIcon}
-                        />
-                    )}
+                    {localGps && <Marker position={[localGps.lat, localGps.lng]} icon={simGpsIcon} />}
                 </MapContainer>
             </div>
             {localGps && (
@@ -316,23 +249,18 @@ function GpsTab({ mapCenter, localGps, onGpsClick, onClear }: {
 
 // ─── Station Tab ──────────────────────────────────────────────
 
-function StationTab({
-    stationSearch, setStationSearch, filteredStations, localStationId,
-    onSelectStation, onClear, activeStation, allStations,
-}: {
+function StationTab({ stationSearch, setStationSearch, filteredStations, localStation, onSelectStation, onClear }: {
     stationSearch: string;
     setStationSearch: (v: string) => void;
     filteredStations: { id: string; name: string; line: string }[];
-    localStationId: string | null;
-    onSelectStation: (id: string) => void;
+    localStation: Station | null;
+    onSelectStation: (station: Station) => void;
     onClear: () => void;
-    activeStation: Station | null;
-    allStations: { id: string; name: string; line: string }[];
 }) {
     return (
         <div className="h-full flex flex-col overflow-hidden">
             {/* Search bar */}
-            <div className="px-3 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+            <div className="px-3 py-2 bg-white border-b border-gray-200 flex-shrink-0 relative z-10">
                 <div className="relative">
                     <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
@@ -343,28 +271,23 @@ function StationTab({
                         className="w-full pl-8 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
                     />
                     {stationSearch && (
-                        <button
-                            onClick={() => setStationSearch('')}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
+                        <button onClick={() => setStationSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
                             <X size={14} />
                         </button>
                     )}
                 </div>
-
-                {/* Search results dropdown */}
                 {filteredStations.length > 0 && (
-                    <div className="mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
+                    <div className="absolute left-3 right-3 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {filteredStations.map(s => (
                             <button
                                 key={s.id}
-                                onClick={() => onSelectStation(s.id)}
+                                onClick={() => {
+                                    // find the full Station object to pass to MrtMap-compatible handler
+                                    onSelectStation({ id: s.id, name: s.name, x: 0, y: 0 });
+                                }}
                                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-sm text-left"
                             >
-                                <span
-                                    className="w-2 h-2 rounded-full flex-shrink-0"
-                                    style={{ background: LINE_COLORS[s.line] ?? '#999' }}
-                                />
+                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: LINE_COLORS[s.line] ?? '#999' }} />
                                 <span className="font-medium">{s.name}</span>
                                 <span className="text-xs text-gray-400">{s.id}</span>
                                 <span className="text-xs text-gray-400 ml-auto">{LINE_NAMES[s.line] ?? s.line}</span>
@@ -374,118 +297,29 @@ function StationTab({
                 )}
             </div>
 
-            {/* Currently selected */}
-            {localStationId && (
-                <div className="flex-shrink-0 mx-3 mt-2 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between">
+            {/* Selected station badge */}
+            {localStation && (
+                <div className="flex-shrink-0 mx-3 mt-2 p-2 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span
-                            className="w-3 h-3 rounded-full"
-                            style={{ background: LINE_COLORS[localStationId.replace(/\d+$/, '')] ?? '#999' }}
-                        />
+                        <span className="w-3 h-3 rounded-full" style={{ background: LINE_COLORS[localStation.id.replace(/\d+$/, '')] ?? '#999' }} />
                         <div>
-                            <p className="font-bold text-purple-800 text-sm">
-                                {allStations.find(s => s.id === localStationId)?.name ?? localStationId}
-                            </p>
-                            <p className="text-xs text-purple-500">{localStationId}</p>
+                            <p className="font-bold text-purple-800 text-sm">{localStation.name}</p>
+                            <p className="text-xs text-purple-500">{localStation.id}</p>
                         </div>
                     </div>
-                    <button onClick={onClear} className="text-purple-400 hover:text-purple-600 p-1">
-                        <X size={16} />
-                    </button>
+                    <button onClick={onClear} className="text-purple-400 hover:text-purple-600 p-1"><X size={16} /></button>
                 </div>
             )}
 
-            {/* MRT map hint */}
-            <p className="flex-shrink-0 text-[11px] text-gray-400 text-center py-1">
-                或直接點擊下方捷運地圖選擇站點
-            </p>
+            <p className="flex-shrink-0 text-[11px] text-gray-400 text-center py-1">點擊地圖站點選擇</p>
 
-            {/* MRT Map */}
-            <div className="flex-1 overflow-hidden relative">
-                <TransformWrapper
-                    initialScale={1.2}
-                    minScale={0.5}
-                    maxScale={5}
-                    centerOnInit={true}
-                    wheel={{ step: 0.001 }}
-                    doubleClick={{ disabled: true }}
-                    pinch={{ step: 5 }}
-                    limitToBounds={true}
-                    panning={{ velocityDisabled: false }}
-                >
-                    <TransformComponent
-                        wrapperStyle={{ width: '100%', height: '100%' }}
-                        contentStyle={{ position: 'relative' }}
-                    >
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <img src={mapImg} alt="Taipei MRT Map" style={{ display: 'block', userSelect: 'none' }} />
-
-                            {stationsData.map((station) => {
-                                const isSelected = station.id === localStationId;
-                                return (
-                                    <button
-                                        key={station.id}
-                                        style={{
-                                            position: 'absolute',
-                                            left: station.x,
-                                            top: station.y,
-                                            width: 24,
-                                            height: 24,
-                                            marginLeft: -5,
-                                            marginTop: -5,
-                                            borderRadius: '50%',
-                                            border: isSelected ? '3px solid #7c3aed' : '2px solid transparent',
-                                            background: isSelected ? 'rgba(124,58,237,0.25)' : 'transparent',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.15s',
-                                            zIndex: isSelected ? 20 : 10,
-                                        }}
-                                        onClick={() => onSelectStation(station.id)}
-                                        title={`${station.name} (${station.id})`}
-                                    />
-                                );
-                            })}
-
-                            {/* Selected station pin */}
-                            {activeStation && (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        left: activeStation.x,
-                                        top: activeStation.y,
-                                        transform: 'translate(-37%, -90%)',
-                                        pointerEvents: 'none',
-                                        zIndex: 30,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <div style={{
-                                        background: '#7c3aed',
-                                        color: 'white',
-                                        fontSize: 10,
-                                        fontWeight: 'bold',
-                                        padding: '2px 6px',
-                                        borderRadius: 6,
-                                        whiteSpace: 'nowrap',
-                                        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                                        marginBottom: 2,
-                                    }}>
-                                        {activeStation.name}
-                                    </div>
-                                    <div style={{
-                                        width: 0,
-                                        height: 0,
-                                        borderLeft: '5px solid transparent',
-                                        borderRight: '5px solid transparent',
-                                        borderTop: '6px solid #7c3aed',
-                                    }} />
-                                </div>
-                            )}
-                        </div>
-                    </TransformComponent>
-                </TransformWrapper>
+            {/* Reuse existing MrtMap component */}
+            <div className="flex-1 overflow-hidden">
+                <MrtMap
+                    hideHeader
+                    selectedStation={localStation}
+                    onStationSelect={onSelectStation}
+                />
             </div>
         </div>
     );

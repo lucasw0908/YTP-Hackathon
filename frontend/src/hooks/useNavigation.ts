@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocation } from '../contexts/LocationContext';
 import type { Route, Waypoint, TransportMode, PositioningMode } from '../types/wayPoint';
 
-const GPS_ARRIVAL_RADIUS_M = 400;
+const GPS_ARRIVAL_RADIUS_M = 50;
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371000;
@@ -50,6 +50,19 @@ export function useNavigation(route: Route | null): NavStatus {
     const triggeredRef = useRef<Set<number>>(new Set(
         Array.from({ length: currentIndex }, (_, i) => i)
     ));
+
+    const isCompleteRef = useRef(false);
+    useEffect(() => { isCompleteRef.current = isComplete; });
+
+    // unmount 或 route 切換時：若未完成就清除進度，下次從頭開始
+    useEffect(() => {
+        const routeId = route?.id;
+        return () => {
+            if (routeId && !isCompleteRef.current) {
+                localStorage.removeItem(`nav_progress_${routeId}`);
+            }
+        };
+    }, [route?.id]);
 
     const waypoints = route?.waypoints ?? [];
     const targetWaypoint = isComplete ? null : (waypoints[currentIndex] ?? null);
@@ -141,11 +154,13 @@ export function useNavigation(route: Route | null): NavStatus {
     }, [gps, targetWaypoint, isComplete, currentIndex, handleArrival, waypoints, pendingPrompt]);
 
     // Beacon 站碼比對
+    // positioning 欄位描述「此點之後」的定位方式，不代表偵測此點的方法。
+    // 只要 waypoint 有 stationCode（含出站 transition）就用 beacon 比對。
     useEffect(() => {
         if (!currentStationCode || !targetWaypoint || isComplete || pendingPrompt) return;
-        if (targetWaypoint.positioning !== 'beacon') return;
         const wp = targetWaypoint as { stationCode?: string };
-        if (wp.stationCode && wp.stationCode === currentStationCode) {
+        if (!wp.stationCode) return;
+        if (wp.stationCode === currentStationCode) {
             handleArrival(currentIndex, waypoints);
         }
     }, [currentStationCode, targetWaypoint, isComplete, currentIndex, handleArrival, waypoints, pendingPrompt]);

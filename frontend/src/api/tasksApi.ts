@@ -1,4 +1,4 @@
-export type TaskType = '景點' | '美食' | '購物';
+export type TaskType = '景點' | '美食' | '購物' | '活動';
 
 export interface Task {
     task_id: number;          // 從 API 的 'id' 映射過來
@@ -15,12 +15,14 @@ export const TYPE_COLORS: Record<TaskType, string> = {
     '景點': '#3b82f6',
     '美食': '#ef4444',
     '購物': '#f59e0b',
+    '活動': '#609052',
 };
 
 export const TYPE_EMOJI: Record<TaskType, string> = {
     '景點': '🏛',
     '美食': '🍜',
     '購物': '🛍',
+    '活動': '❤️',
 };
 
 export const MOCK_TASK: Task = {
@@ -89,7 +91,8 @@ let cachedTasks: Task[] = [];
 export async function fetchTasks(userLat: number, userLng: number): Promise<Task[]> {
     try {
         // 調用正式 API (若有需要傳送經緯度，以 Query 方式帶入)
-        const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
+        // const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
+        const response = await fetch(`/api/mission/newmission?`);
 
         if (!response.ok) {
             throw new Error(`API 請求失敗: ${response.status}`);
@@ -122,7 +125,7 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
                 description: mission.description,
                 nearest_station: mission.nearest_station || '未知',
                 type: inferredType,
-                estimated_duration_mins: 60, // 預設給予 60 分鐘
+                estimated_duration_mins: Math.floor(Math.random() * 30 + 60), // 預設給予 60 分鐘
                 location: {
                     lat: mission.location.lat,
                     lng: mission.location.lng
@@ -132,7 +135,21 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
 
         cachedTasks = mappedTasks;
         console.log(mappedTasks)
-        return mappedTasks;
+        // return mappedTasks;
+        const st: Task = {
+            "task_id": 11,
+            "task_name": "YTP Hackathon",
+            "location_name": "精誠資訊集團 SYSTEX 總部",
+            "description": "在 SYSTEX 門口，跟門口Logo比讚合照，拍出完美美照！",
+            "nearest_station": "港墘",
+            "estimated_duration_mins": Math.floor(Math.random() * 30 + 60),
+            "type": "活動",
+            "location": {
+                "lat": 25.076910,
+                "lng": 121.573714
+            }
+        }
+        return [st, ...mappedTasks];
 
     } catch (error) {
         console.error("抓取任務失敗，請確認 API 狀態:", error);
@@ -143,4 +160,12 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
 // 供其他頁面透過 ID 查詢已抓取的任務
 export function getTaskById(id: number): Task | undefined {
     return cachedTasks.find(t => t.task_id === id);
+}
+
+export async function markMissionComplete(taskId: number): Promise<void> {
+    try {
+        await fetch(`/api/mission/${taskId}/complete`, { method: 'PATCH' });
+    } catch (e) {
+        console.warn('markMissionComplete failed:', e);
+    }
 }

@@ -58,6 +58,16 @@ async def geocode_location(location_name: str, default_city: str = "台北") -> 
             
     return None
 
+@router.patch("/{mission_id}/complete")
+async def complete_mission(mission_id: int, session: SessionDep):
+    mission = await session.get(Mission, mission_id)
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission not found")
+    mission.is_completed = True
+    await session.commit()
+    return {"success": True}
+
+
 @router.get("/newmission")
 async def generate_new_missions(session: SessionDep, settings: SettingsDep, user_id: Optional[int] = None):
     """
