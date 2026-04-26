@@ -66,3 +66,5 @@ Nginx 作為反向代理伺服器
 4. 任務挑戰與地標打卡流程
 影片連結：
 
+<img src="https://cdn.discordapp.com/attachments/1467804570456690698/1497778525917151312/image.png?ex=69eec273&is=69ed70f3&hm=caa8a2364a62588a4f47cdd1844a9e554d43ea82bcc7a06cb1d1b0e492787499&">
+
