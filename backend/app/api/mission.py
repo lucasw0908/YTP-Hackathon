@@ -36,7 +36,8 @@ class MissionResponse(BaseModel):
 
 # 2. 實作非同步地理編碼函數 (若查無結果回傳 None)
 async def geocode_location(location_name: str, default_city: str = "台北") -> Optional[Tuple[float, float]]:
-    url = "https://nominatim.openstreetmap.org/search"
+    # url = "https://nominatim.openstreetmap.org/search"
+    url = "https://geo.50313tjx06.workers.dev/search"
     params = {
         "q": f"{default_city} {location_name}",
         "format": "json",
