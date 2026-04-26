@@ -45,8 +45,8 @@ function Landing() {
         setIsSubmitting(false);
         
         if (result.success) {
-            alert("送出成功！即將前往導航頁面。");
-            navigate('/nav');
+            // alert("送出成功！即將前往導航頁面。");
+            navigate('/map');
         } else {
             alert(result.message);
         }
@@ -55,8 +55,8 @@ function Landing() {
     return (
         <div className="min-h-screen bg-gray-50 py-10 px-4 flex flex-col justify-center">
             <header className="max-w-xl mx-auto w-full text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">AI 客製化旅遊規劃</h1>
-                <p className="text-gray-500 mt-2">告訴我們你的偏好，幫你安排最完美的捷運輕旅行</p>
+                <h1 className="text-3xl font-bold text-gray-800">遊戲行前調查</h1>
+                <p className="text-gray-500 mt-2">告訴我們你的偏好，幫你安排專屬的闖關任務</p>
             </header>
 
             <main className="w-full">

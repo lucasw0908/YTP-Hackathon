@@ -91,7 +91,8 @@ let cachedTasks: Task[] = [];
 export async function fetchTasks(userLat: number, userLng: number): Promise<Task[]> {
     try {
         // 調用正式 API (若有需要傳送經緯度，以 Query 方式帶入)
-        const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
+        // const response = await fetch(`/api/mission/newmission?lat=${userLat}&lng=${userLng}`);
+        const response = await fetch(`/api/mission/newmission?`);
 
         if (!response.ok) {
             throw new Error(`API 請求失敗: ${response.status}`);
@@ -124,7 +125,7 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
                 description: mission.description,
                 nearest_station: mission.nearest_station || '未知',
                 type: inferredType,
-                estimated_duration_mins: 60, // 預設給予 60 分鐘
+                estimated_duration_mins: Math.floor(Math.random() * 30 + 60), // 預設給予 60 分鐘
                 location: {
                     lat: mission.location.lat,
                     lng: mission.location.lng
@@ -141,7 +142,7 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
             "location_name": "精誠資訊集團 SYSTEX 總部",
             "description": "在 SYSTEX 門口，跟門口Logo比讚合照，拍出完美美照！",
             "nearest_station": "港墘",
-            "estimated_duration_mins" :Math.floor(Math.random()*30+60),
+            "estimated_duration_mins": Math.floor(Math.random() * 30 + 60),
             "type": "活動",
             "location": {
                 "lat": 25.076910,
@@ -159,4 +160,12 @@ export async function fetchTasks(userLat: number, userLng: number): Promise<Task
 // 供其他頁面透過 ID 查詢已抓取的任務
 export function getTaskById(id: number): Task | undefined {
     return cachedTasks.find(t => t.task_id === id);
+}
+
+export async function markMissionComplete(taskId: number): Promise<void> {
+    try {
+        await fetch(`/api/mission/${taskId}/complete`, { method: 'PATCH' });
+    } catch (e) {
+        console.warn('markMissionComplete failed:', e);
+    }
 }

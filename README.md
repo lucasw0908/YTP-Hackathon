@@ -7,10 +7,13 @@
 
 | 登入介面 | 行前調查 |
 | ---- | ---- |
-|    |    ![](readme-assets/image.png)    |
-| 導航頁面 | 任務頁面 |
-|      |      |
-
+| ![](readme-assets/login.png)   |    ![](readme-assets/image.png)    |
+| 行前調查 | 導航頁面 |
+|   ![alt text](readme-assets/query.png)   |  ![alt text](readme-assets/spot.png)    |
+| 導航頁面 | 導航頁面 |
+|    ![alt text](readme-assets/route.png)   |  ![alt text](readme-assets/metro.png)    |
+| 任務繳交 - 成功 | 導航頁面 |
+|    ![alt text](readme-assets/submit-success.png)   |  ![alt text](readme-assets/submit-fail.png)    |
 
 
 ## 主要功能與優勢
@@ -46,25 +49,17 @@
 
 ### 行動裝置/藍牙（**beaon2**）
 
-React Native 應用，支援藍牙 Beacon 掃描
+**React Native** 應用，支援藍牙 Beacon 掃描
 與後端同步任務進度
 
 ### 基礎設施
 
-Docker 容器化部署，docker-compose 管理多服務協作
-Nginx 作為反向代理伺服器
+**Docker** 容器化部署，docker-compose 管理多服務協作
+**Nginx** 作為反向代理伺服器
 
 
 
-# 示範影片
-1. 快速導覽 - 1：從登入到建立一趟行程挑戰
-影片連結：
-2. 快速導覽 - 2：行程導覽以及挑戰系統
-影片連結：
-3. 如何規劃專屬行程與選擇住宿
-影片連結：
-4. 任務挑戰與地標打卡流程
-影片連結：
+
 
 <img src="https://cdn.discordapp.com/attachments/1467804570456690698/1497778525917151312/image.png?ex=69eec273&is=69ed70f3&hm=caa8a2364a62588a4f47cdd1844a9e554d43ea82bcc7a06cb1d1b0e492787499&">
 
